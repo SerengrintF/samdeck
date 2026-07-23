@@ -63,18 +63,31 @@ npm run dev
 
 ## 공개 사이트
 
-GitHub Pages: https://serengrintf.github.io/samdeck/
+- 사이트: https://samdeck.xyz/
+- 평점 API: https://api.samdeck.xyz/
 
-배포는 **자동이 아닙니다.** 채팅에서 배포를 요청하면 Actions(`workflow_dispatch`)로 올립니다.
+배포는 **자동이 아닙니다.** 채팅에서 배포를 요청하면 Actions로 올립니다.
 
-## 이용자 평균 평점 (선택)
+GitHub Variables:
 
-Railway PostgreSQL + API 배포 후, GitHub 저장소 **Settings → Secrets and variables → Actions → Variables**에
-`VITE_RATINGS_API_URL`을 넣거나 로컬 `.env.local`에 설정합니다. 자세한 내용은 [`server/README.md`](server/README.md).
+```text
+VITE_RATINGS_API_URL=https://api.samdeck.xyz
+```
+
+Railway API Variables 예시:
+
+```text
+CORS_ORIGINS=https://samdeck.xyz,https://serengrintf.github.io,http://localhost:5173
+```
+
+## 이용자 평균 평점
+
+로컬:
 
 ```env
 # .env.local
-VITE_RATINGS_API_URL=https://your-api.up.railway.app
+VITE_RATINGS_API_URL=https://api.samdeck.xyz
 ```
 
+자세한 API 설정은 [`server/README.md`](server/README.md).
 API가 없거나 실패해도 앱은 동작하며, 팝업의 내 점수는 로컬에 저장됩니다.

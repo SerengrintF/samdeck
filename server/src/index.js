@@ -160,6 +160,19 @@ app.use(
 )
 app.use(express.json({ limit: '32kb' }))
 
+app.get('/', (_req, res) => {
+  res
+    .type('html')
+    .send(
+      '<!doctype html><meta charset="utf-8" /><title>SamDeck API</title>' +
+        '<body style="font-family:sans-serif;background:#111;color:#eee;padding:2rem">' +
+        '<p>SamDeck 평점 API입니다.</p>' +
+        '<p>사이트: <a href="https://samdeck.xyz" style="color:#e0c56a">https://samdeck.xyz</a></p>' +
+        '<p>헬스: <a href="/health" style="color:#e0c56a">/health</a></p>' +
+        '</body>',
+    )
+})
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true, memory: USE_MEMORY })
 })
