@@ -100,7 +100,7 @@ body::before {
   min-height: 36px;
 }
 
-.top-bar .season-bar {
+.top-bar .season-select {
   grid-column: 1;
   justify-self: start;
   margin: 0;
@@ -681,43 +681,126 @@ body.modal-open .dock {
   animation: rise 0.55s ease-out 0.04s both;
 }
 
-.season-bar {
-  display: flex;
+.top-bar .season-select {
+  grid-column: 1;
+  justify-self: start;
+  margin: 0;
+}
+
+.season-select {
+  position: relative;
+  z-index: 5;
   width: fit-content;
   max-width: 100%;
-  gap: 0;
-  margin: 0 0 4px;
-  padding: 3px;
+}
+
+.season-select__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 72px;
+  margin: 0;
+  padding: 5px 10px 5px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-}
-
-.season-btn {
-  min-width: 44px;
-  padding: 5px 12px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-dim);
+  color: var(--gold-soft);
   font-family: var(--font-display);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1.2;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
 
-.season-btn.is-active {
+.season-select__trigger:hover,
+.season-select.is-open .season-select__trigger {
+  border-color: var(--line-strong);
+  background: linear-gradient(160deg, rgba(158, 27, 27, 0.65), rgba(36, 30, 23, 0.9));
+}
+
+.season-select__value {
+  flex: 1;
+  text-align: left;
+}
+
+.season-select__chevron {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  opacity: 0.85;
+  transition: transform 0.2s;
+}
+
+.season-select.is-open .season-select__chevron {
+  transform: rotate(180deg);
+}
+
+.season-select__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 6;
+  min-width: max(100%, 9.5rem);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+}
+
+.season-select__list[hidden] {
+  display: none;
+}
+
+.season-select__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.season-select__option:hover:not(:disabled) {
+  background: rgba(201, 162, 39, 0.1);
+  color: var(--text);
+}
+
+.season-select__option.is-active {
   background: linear-gradient(160deg, rgba(158, 27, 27, 0.65), rgba(36, 30, 23, 0.9));
   color: var(--gold-soft);
 }
 
-.season-btn.is-disabled,
-.season-btn:disabled {
-  opacity: 0.35;
+.season-select__option.is-disabled,
+.season-select__option:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
+}
+
+.season-select__option-short {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.season-select__option-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
 }
 
 .rule-strip span {

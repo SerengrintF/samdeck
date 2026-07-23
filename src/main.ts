@@ -259,8 +259,23 @@ function selectAllGenerals(): void {
   syncSelectChrome()
 }
 
+function selectAllSkills(): void {
+  if (!state.trackSkills) state.trackSkills = true
+  for (const s of seasonSkills()) state.ownedSkills.add(s.id)
+  persist()
+  refreshPanels()
+}
+
+function selectAllCurrent(): void {
+  if (state.tab === 'generals') selectAllGenerals()
+  else selectAllSkills()
+}
+
 function setTrackSkills(on: boolean): void {
   state.trackSkills = on
+  if (on && state.ownedSkills.size === 0) {
+    for (const s of seasonSkills()) state.ownedSkills.add(s.id)
+  }
   persist()
   refreshPanels()
 }
@@ -1025,7 +1040,8 @@ function renderSkillPanels(): string {
         <span>보유 전법만 반영</span>
       </label>
       <p class="skill-track-banner__hint">
-        끄면 전법은 전부 보유로 보고, 세트 안 장수·전법 겹침만 검사합니다.
+        켜면 선택한 전법만 세트 추천에 씁니다. 처음 켤 때 전법이 비어 있으면 전체 선택됩니다.
+        「전체 선택」으로 다시 모두 고를 수 있습니다.
       </p>
     </div>
     <div class="general-grid skill-grid">
@@ -1056,25 +1072,48 @@ function renderSkillPanels(): string {
 function renderShellChrome(): string {
   const navActive = state.view === 'set-result' ? 'roster' : state.page
   const showSub = navActive === 'roster'
+  const seasonMeta = getSeasonMeta(state.season)
 
   return `
     <div class="top-bar">
-      <div class="season-bar" role="tablist" aria-label="시즌 선택">
-        ${SEASONS.map((s) => {
-          const active = state.season === s.id
-          return `
-            <button
-              type="button"
-              class="season-btn ${active ? 'is-active' : ''} ${s.enabled ? '' : 'is-disabled'}"
-              data-season="${s.id}"
-              ${s.enabled ? '' : 'disabled'}
-              aria-label="${s.enabled ? s.label : `${s.label} (준비 중)`}"
-              title="${s.enabled ? s.label : `${s.label} (준비 중)`}"
-            >
-              ${s.short}
-            </button>
-          `
-        }).join('')}
+      <div class="season-select" data-season-select>
+        <button
+          type="button"
+          class="season-select__trigger"
+          id="season-select-trigger"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          aria-controls="season-select-list"
+          aria-label="시즌 선택"
+        >
+          <span class="season-select__value">${seasonMeta.short}</span>
+          <span class="season-select__chevron" aria-hidden="true">▾</span>
+        </button>
+        <ul
+          class="season-select__list"
+          id="season-select-list"
+          role="listbox"
+          aria-label="시즌"
+          hidden
+        >
+          ${SEASONS.map((s) => {
+            const active = state.season === s.id
+            return `
+              <li role="option" aria-selected="${active}" aria-disabled="${!s.enabled}">
+                <button
+                  type="button"
+                  class="season-select__option ${active ? 'is-active' : ''} ${s.enabled ? '' : 'is-disabled'}"
+                  data-season="${s.id}"
+                  ${s.enabled ? '' : 'disabled'}
+                  title="${s.enabled ? s.label : `${s.label} (준비 중)`}"
+                >
+                  <span class="season-select__option-short">${s.short}</span>
+                  <span class="season-select__option-label">${s.label}${s.enabled ? '' : ' · 준비 중'}</span>
+                </button>
+              </li>
+            `
+          }).join('')}
+        </ul>
       </div>
       <img
         class="site-brand"
@@ -1227,10 +1266,8 @@ function renderRosterPage(): string {
           <span class="toolbar__actions">
             <button
               type="button"
-              class="link-btn ${state.tab === 'generals' ? '' : 'is-hidden'}"
+              class="link-btn"
               id="select-all"
-              aria-hidden="${state.tab === 'generals' ? 'false' : 'true'}"
-              tabindex="${state.tab === 'generals' ? 0 : -1}"
             >전체 선택</button>
             <button type="button" class="link-btn" id="clear-owned">초기화</button>
           </span>
@@ -1567,15 +1604,62 @@ function bindRecommend(): void {
   })
 }
 
-function bindShell(): void {
-  closeDeckModal()
+function bindSeasonSelect(): void {
+  const root = document.querySelector<HTMLElement>('[data-season-select]')
+  const trigger = document.querySelector<HTMLButtonElement>('#season-select-trigger')
+  const list = document.querySelector<HTMLElement>('#season-select-list')
+  if (!root || !trigger || !list) return
 
-  document.querySelectorAll<HTMLButtonElement>('[data-season]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+  const close = (): void => {
+    list.hidden = true
+    trigger.setAttribute('aria-expanded', 'false')
+    root.classList.remove('is-open')
+  }
+
+  const open = (): void => {
+    list.hidden = false
+    trigger.setAttribute('aria-expanded', 'true')
+    root.classList.add('is-open')
+  }
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation()
+    if (!list.hidden) {
+      close()
+      return
+    }
+    open()
+    const onDoc = (ev: MouseEvent): void => {
+      if (root.contains(ev.target as Node)) return
+      close()
+      document.removeEventListener('click', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+    const onKey = (ev: KeyboardEvent): void => {
+      if (ev.key !== 'Escape') return
+      close()
+      document.removeEventListener('click', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+    window.setTimeout(() => {
+      document.addEventListener('click', onDoc)
+      document.addEventListener('keydown', onKey)
+    }, 0)
+  })
+
+  list.querySelectorAll<HTMLButtonElement>('[data-season]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
       const id = btn.dataset.season as SeasonId | undefined
+      close()
       if (id) setSeason(id)
     })
   })
+}
+
+function bindShell(): void {
+  closeDeckModal()
+  bindSeasonSelect()
 
   document.querySelectorAll<HTMLButtonElement>('[data-nav]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1613,7 +1697,7 @@ function bindRoster(): void {
   })
 
   document.querySelector('#clear-owned')?.addEventListener('click', clearCurrent)
-  document.querySelector('#select-all')?.addEventListener('click', selectAllGenerals)
+  document.querySelector('#select-all')?.addEventListener('click', selectAllCurrent)
   document.querySelector('#set-recommend-btn')?.addEventListener('click', runSetRecommend)
 }
 
