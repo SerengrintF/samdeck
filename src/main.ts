@@ -446,10 +446,14 @@ function renderMemberCol(m: DeckMatch['members'][0], def?: Deck['members'][0]): 
           ${renderSkillChip(m.slots[1])}
           ${
             altNames.length
-              ? `<li class="skill-chip skill-chip--alt-pool">
+              ? altNames
+                  .map(
+                    (name) => `<li class="skill-chip skill-chip--alt-pool">
                   <span class="skill-chip__kind">대체</span>
-                  <span class="skill-chip__name">${altNames.join(' · ')}</span>
-                </li>`
+                  <span class="skill-chip__name">${name}</span>
+                </li>`,
+                  )
+                  .join('')
               : ''
           }
         </ul>
@@ -666,8 +670,6 @@ function renderDeckCard(
 function renderComboCard(deck: Deck): string {
   const match = deckToDisplayMatch(deck)
   const formation = deck.formation?.trim()
-  const avg = listAverage(deck.id)
-  const countLabel = formatRatingCount(state.ratingStats[deck.id]?.count ?? 0)
   return `
     <article class="combo-card">
       <button type="button" class="combo-card__main" data-deck-id="${deck.id}">
@@ -696,7 +698,7 @@ function renderComboCard(deck: Deck): string {
         </div>
       </button>
       <div class="combo-card__actions">
-        ${renderStarRating(deck.id, avg, false, { kind: 'avg', countLabel })}
+        <span class="combo-card__rating" data-list-rating="${deck.id}">${formatListRating(deck.id)}</span>
         ${renderSaveComboBtn(deck.id)}
       </div>
     </article>
@@ -706,6 +708,16 @@ function renderComboCard(deck: Deck): string {
 function listAverage(deckId: string): number {
   // 서버 통계가 있을 때만 평균 표시 (로컬 내 점수를 평균처럼 쓰지 않음)
   return state.ratingStats[deckId]?.average ?? 0
+}
+
+function formatListRating(deckId: string): string {
+  const avg = listAverage(deckId)
+  const count = state.ratingStats[deckId]?.count ?? 0
+  if (avg <= 0) return '평점 —'
+  const countLabel = formatRatingCount(count)
+  return countLabel
+    ? `평점 ${formatRating(avg)}(${countLabel})`
+    : `평점 ${formatRating(avg)}`
 }
 
 function myRatingValue(deckId: string): number {
@@ -782,6 +794,9 @@ function updateRatingDisplay(deckId: string): void {
   document.querySelectorAll(`[data-rating-summary="${CSS.escape(deckId)}"]`).forEach((el) => {
     const strong = el.querySelector('strong')
     if (strong) strong.textContent = formatRating(avg)
+  })
+  document.querySelectorAll(`[data-list-rating="${CSS.escape(deckId)}"]`).forEach((el) => {
+    el.textContent = formatListRating(deckId)
   })
 }
 
@@ -1043,23 +1058,32 @@ function renderShellChrome(): string {
   const showSub = navActive === 'roster'
 
   return `
-    <p class="site-brand">SamDeck</p>
-    <div class="season-bar" role="tablist" aria-label="시즌 선택">
-      ${SEASONS.map((s) => {
-        const active = state.season === s.id
-        return `
-          <button
-            type="button"
-            class="season-btn ${active ? 'is-active' : ''} ${s.enabled ? '' : 'is-disabled'}"
-            data-season="${s.id}"
-            ${s.enabled ? '' : 'disabled'}
-            aria-label="${s.enabled ? s.label : `${s.label} (준비 중)`}"
-            title="${s.enabled ? s.label : `${s.label} (준비 중)`}"
-          >
-            ${s.short}
-          </button>
-        `
-      }).join('')}
+    <div class="top-bar">
+      <div class="season-bar" role="tablist" aria-label="시즌 선택">
+        ${SEASONS.map((s) => {
+          const active = state.season === s.id
+          return `
+            <button
+              type="button"
+              class="season-btn ${active ? 'is-active' : ''} ${s.enabled ? '' : 'is-disabled'}"
+              data-season="${s.id}"
+              ${s.enabled ? '' : 'disabled'}
+              aria-label="${s.enabled ? s.label : `${s.label} (준비 중)`}"
+              title="${s.enabled ? s.label : `${s.label} (준비 중)`}"
+            >
+              ${s.short}
+            </button>
+          `
+        }).join('')}
+      </div>
+      <img
+        class="site-brand"
+        src="${import.meta.env.BASE_URL}brand/samdeck-logo.png"
+        alt="SamDeck"
+        width="1023"
+        height="341"
+        decoding="async"
+      />
     </div>
 
     <header class="hero">
