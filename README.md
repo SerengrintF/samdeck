@@ -65,7 +65,7 @@ npm run dev
 
 GitHub Pages: https://serengrintf.github.io/samdeck/
 
-`main` 브랜치에 push하면 Actions가 자동 배포합니다.
+배포는 **자동이 아닙니다.** 채팅에서 배포를 요청하면 Actions(`workflow_dispatch`)로 올립니다.
 
 ## 이용자 평균 평점 (선택)
 

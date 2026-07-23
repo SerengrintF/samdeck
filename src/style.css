@@ -19,6 +19,7 @@
   --dock-h: 88px;
   --font-display: 'Noto Serif KR', 'Song Myung', serif;
   --font-body: 'Noto Sans KR', system-ui, sans-serif;
+  --font-brand: 'Cinzel', 'Noto Serif KR', serif;
   color-scheme: dark;
 }
 
@@ -76,6 +77,20 @@ body::before {
   max-width: 920px;
   margin: 0 auto;
   padding: 16px 20px 40px;
+}
+
+.site-brand {
+  margin: 4px 0 10px;
+  text-align: center;
+  font-family: var(--font-brand);
+  font-size: clamp(1.55rem, 4.2vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.15;
+  color: var(--gold-soft);
+  text-shadow:
+    0 1px 0 rgba(8, 7, 5, 0.85),
+    0 0 24px rgba(201, 162, 39, 0.18);
 }
 
 .page--with-dock {
@@ -638,7 +653,7 @@ body.modal-open .dock {
   width: fit-content;
   max-width: 100%;
   gap: 0;
-  margin: 0 0 4px;
+  margin: 0 auto 4px;
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 8px;

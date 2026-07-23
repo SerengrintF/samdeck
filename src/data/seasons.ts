@@ -18,7 +18,7 @@ export const SEASONS: SeasonMeta[] = [
   { id: 'S3', label: '시즌 3', short: 'S3', enabled: false },
 ]
 
-export const DEFAULT_SEASON: SeasonId = 'S2'
+export const DEFAULT_SEASON: SeasonId = 'S1'
 
 export function getSeasonMeta(id: SeasonId): SeasonMeta {
   return SEASONS.find((s) => s.id === id) ?? SEASONS.find((s) => s.id === DEFAULT_SEASON)!

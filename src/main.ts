@@ -1043,6 +1043,7 @@ function renderShellChrome(): string {
   const showSub = navActive === 'roster'
 
   return `
+    <p class="site-brand">SamDeck</p>
     <div class="season-bar" role="tablist" aria-label="시즌 선택">
       ${SEASONS.map((s) => {
         const active = state.season === s.id
