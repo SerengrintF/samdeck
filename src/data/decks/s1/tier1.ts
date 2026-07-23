@@ -3,7 +3,6 @@ import { mem } from '../../helpers'
 
 /**
  * S1 · 1티어 덱
- * 진형은 추후 일괄 반영.
  */
 export const s1Tier1Decks: Deck[] = [
   {
@@ -11,6 +10,7 @@ export const s1Tier1Decks: Deck[] = [
     name: '제갈량·황개·대교',
     season: 'S1',
     tier: 1,
+    formation: '안형진',
     members: [
       mem('제갈량', '충신의 기재', '독설가', [], ['출사표', '시리', '탈계']),
       mem('황개', '천하평론', '신의 가호', [], ['귀모', '기동', '수심']),
@@ -22,6 +22,7 @@ export const s1Tier1Decks: Deck[] = [
     name: '조조·곽가·순욱',
     season: 'S1',
     tier: 1,
+    formation: '기형진',
     members: [
       mem(
         '조조',
@@ -45,6 +46,7 @@ export const s1Tier1Decks: Deck[] = [
     name: '손상향·견희·소교',
     season: 'S1',
     tier: 1,
+    formation: '방원진',
     members: [
       mem(
         '손상향',
@@ -64,10 +66,23 @@ export const s1Tier1Decks: Deck[] = [
     ],
   },
   {
+    id: 's1-t1-sunshangxiang-zhenji-diaochan',
+    name: '손상향·견희·초선',
+    season: 'S1',
+    tier: 1,
+    formation: '방원진',
+    members: [
+      mem('손상향', '신속전개', '예리한 통찰', [], ['무녀전', '만두', '저력']),
+      mem('견희', '정의의 희생', '허점 공략', [], ['선세', '병령', '대모']),
+      mem('초선', '강철의 의지', '팔방전', [], ['고협', '피예', '비전']),
+    ],
+  },
+  {
     id: 's1-t1-liubei-zhangfei-huangzhong',
     name: '유비·장비·황충',
     season: 'S1',
     tier: 1,
+    formation: '기형진',
     members: [
       mem(
         '유비',
@@ -97,6 +112,7 @@ export const s1Tier1Decks: Deck[] = [
     name: '조조·주유·순욱',
     season: 'S1',
     tier: 1,
+    formation: '기형진',
     members: [
       mem(
         '조조',

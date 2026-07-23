@@ -3,7 +3,6 @@ import { mem } from '../../helpers'
 
 /**
  * S1 · 3티어 덱
- * 진형은 추후 일괄 반영.
  */
 export const s1Tier3Decks: Deck[] = [
   {
@@ -11,6 +10,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '견희·전위·조조',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '견희',
@@ -34,6 +34,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '조조·초선·여포',
     season: 'S1',
     tier: 3,
+    formation: '방원진',
     members: [
       mem(
         '조조',
@@ -57,6 +58,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '주유·손권·소교',
     season: 'S1',
     tier: 3,
+    formation: '안형진',
     members: [
       mem('주유', '화공전술', '광풍의 분노', [], ['화계', '탈계', '시리']),
       mem(
@@ -80,6 +82,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '조운·유비·서서',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '조운',
@@ -109,6 +112,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '하후돈·관우·등애',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '하후돈',
@@ -132,6 +136,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '서성·마초·원소',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem('서성', '전쟁 종식', '경무장', ['허점 공략'], ['의성', '병감', '병령']),
       mem('마초', '파죽지세', '예리한 통찰', [], ['철기령', '구전', '담전']),
@@ -149,6 +154,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '조조·허저·장합',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '조조',
@@ -178,6 +184,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '초선·방덕·동탁',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '초선',
@@ -207,6 +214,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '하후돈·하후연·등애',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '하후돈',
@@ -230,6 +238,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '하후돈·곽가·등애',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '하후돈',
@@ -259,6 +268,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '유비·장비·관우',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '유비',
@@ -280,6 +290,7 @@ export const s1Tier3Decks: Deck[] = [
     name: '손권·손견·손책',
     season: 'S1',
     tier: 3,
+    formation: '기형진',
     members: [
       mem(
         '손권',

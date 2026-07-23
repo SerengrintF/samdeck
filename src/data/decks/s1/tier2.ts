@@ -3,7 +3,6 @@ import { mem } from '../../helpers'
 
 /**
  * S1 · 2티어 덱
- * 진형은 추후 일괄 반영.
  */
 export const s1Tier2Decks: Deck[] = [
   {
@@ -11,6 +10,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '유비·조운·초선',
     season: 'S1',
     tier: 2,
+    formation: '기형진',
     members: [
       mem(
         '유비',
@@ -40,6 +40,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '조조·마초·동탁',
     season: 'S1',
     tier: 2,
+    formation: '기형진',
     members: [
       mem(
         '조조',
@@ -63,6 +64,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '대교·주유·소교',
     season: 'S1',
     tier: 2,
+    formation: '기형진',
     members: [
       mem(
         '대교',
@@ -92,6 +94,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '유비·장비·서서',
     season: 'S1',
     tier: 2,
+    formation: '기형진',
     members: [
       mem(
         '유비',
@@ -115,6 +118,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '조운·유비·제갈량',
     season: 'S1',
     tier: 2,
+    formation: '기형진',
     members: [
       mem(
         '조운',
@@ -144,6 +148,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '서성·견희·손상향',
     season: 'S1',
     tier: 2,
+    formation: '방원진',
     members: [
       mem(
         '서성',
@@ -167,6 +172,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '초선·채문희·장량',
     season: 'S1',
     tier: 2,
+    formation: '기형진',
     members: [
       mem(
         '초선',
@@ -207,6 +213,7 @@ export const s1Tier2Decks: Deck[] = [
     name: '원소·제갈량·순욱',
     season: 'S1',
     tier: 2,
+    formation: '기형진',
     members: [
       mem(
         '원소',
@@ -223,6 +230,17 @@ export const s1Tier2Decks: Deck[] = [
         ['광풍의 분노'],
         ['왕좌', '웅재', '기만'],
       ),
+    ],
+  },
+  {
+    id: 's1-t2-diaochan-caiwenji-zhanghe',
+    name: '초선·채문희·장합',
+    season: 'S1',
+    tier: 2,
+    members: [
+      mem('초선', '전력 지원', '백전불태', [], ['세음', '고무', '병수']),
+      mem('채문희', '전쟁 종식', '청풍 질주', [], ['호가십팔박', '선구', '원서']),
+      mem('장합', '팔방전', '철기병 돌격', [], ['태평도법', '기동', '은심']),
     ],
   },
 ]
