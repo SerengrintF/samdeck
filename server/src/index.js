@@ -7,10 +7,21 @@ const { Pool } = pg
 const PORT = Number(process.env.PORT) || 8080
 const USE_MEMORY = process.env.MEMORY_STORE === '1'
 const DATABASE_URL = process.env.DATABASE_URL
-const CORS_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean)
+const DEFAULT_CORS = [
+  'http://localhost:5173',
+  'https://samdeck.xyz',
+  'https://www.samdeck.xyz',
+  'https://serengrintf.github.io',
+]
+const CORS_ORIGINS = [
+  ...new Set([
+    ...DEFAULT_CORS,
+    ...(process.env.CORS_ORIGINS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ]),
+]
 
 if (!USE_MEMORY && !DATABASE_URL) {
   console.error('DATABASE_URL is required (or set MEMORY_STORE=1 for local smoke)')
@@ -45,8 +56,8 @@ async function ensureSchema() {
 function normalizeScore(raw) {
   const n = typeof raw === 'number' ? raw : Number(raw)
   if (!Number.isFinite(n) || n <= 0) return null
-  const stepped = Math.round(n * 2) / 2
-  if (stepped < 0.5 || stepped > 5) return null
+  const stepped = Math.round(n)
+  if (stepped < 1 || stepped > 5) return null
   return stepped
 }
 

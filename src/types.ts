@@ -17,6 +17,8 @@ export interface Skill {
   id: string
   name: string
   seasons: SeasonId[]
+  /** 전법 티어 — 2는 보라색으로 구분 */
+  tier: 1 | 2
 }
 
 /** 병법 */

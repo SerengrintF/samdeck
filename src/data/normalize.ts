@@ -70,11 +70,15 @@ const ALIASES: Record<string, string> = {
 
 const CJK = /[\u4e00-\u9fff]/
 
+/** CJK 별칭이 있어도 한글명 확정된 항목 */
+const VERIFIED_DESPITE_CJK_ALIAS = new Set(['대모'])
+
 /** 중국어에서 옮긴 전법명 — UI에 (확인중) 표시 */
 export const UNVERIFIED_SKILL_NAMES = new Set(
   Object.entries(ALIASES)
     .filter(([from]) => CJK.test(from))
-    .map(([, to]) => to),
+    .map(([, to]) => to)
+    .filter((to) => !VERIFIED_DESPITE_CJK_ALIAS.has(to)),
 )
 
 export function displaySkillName(name: string): string {

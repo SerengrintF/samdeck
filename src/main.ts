@@ -5,6 +5,7 @@ import { doctrines } from './data/doctrines'
 import { getSeasonCatalog } from './data/seasonCatalog'
 import { portraitSrc } from './data/portraits'
 import { displaySkillName } from './data/normalize'
+import { skillTier } from './data/skillTiers'
 import { SEASONS, getSeasonMeta } from './data/seasons'
 import { findDeckSets } from './recommend'
 import {
@@ -17,6 +18,7 @@ import {
   saveDeckRatings,
   starFill,
   upsertDeckRating,
+  withLocalRatingChange,
   type DeckRatingStat,
   type RatingValue,
 } from './ratings'
@@ -25,8 +27,11 @@ import {
   MAX_MY_COMBOS,
   checkMyCombos,
   suggestReplacements,
+  planSkillFixes,
+  applySkillToCombo,
   type ComboCheckResult,
   type ReplacementSuggestion,
+  type SkillFixPlan,
 } from './myComboCheck'
 import {
   loadOwnedGenerals,
@@ -88,6 +93,7 @@ const state = {
   myCombos: loadMyCombos(initialSeason),
   comboCheck: null as ComboCheckResult | null,
   comboReplacements: [] as ReplacementSuggestion[],
+  skillFixPlan: null as SkillFixPlan | null,
 }
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -145,6 +151,7 @@ function setSeason(id: SeasonId): void {
   state.openSetId = null
   state.comboCheck = null
   state.comboReplacements = []
+  state.skillFixPlan = null
   state.view = 'browse'
   saveSeason(id)
   render()
@@ -156,6 +163,21 @@ function setPage(page: NavPage): void {
   state.page = page
   state.query = ''
   if (page === 'roster' && !state.tab) state.tab = 'generals'
+  render()
+  if (window.scrollY > 0) window.scrollTo(0, 0)
+}
+
+/** 타이틀 로고 → 첫 화면(조합 추천) */
+function goHome(): void {
+  const alreadyHome = state.view === 'browse' && state.page === 'recommend'
+  state.view = 'browse'
+  state.page = 'recommend'
+  state.query = ''
+  state.detailDeckId = null
+  if (alreadyHome) {
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
   render()
   if (window.scrollY > 0) window.scrollTo(0, 0)
 }
@@ -419,8 +441,10 @@ function deckToDisplayMatch(deck: Deck): DeckMatch {
 function renderSkillChip(slot: DeckMatch['members'][0]['slots'][0]): string {
   const statusLabel =
     slot.status === 'required' ? '필수' : slot.status === 'alt' ? '대체' : '불가'
+  const tier = skillTier(slot.skillId ?? slot.skillName)
+  const tierClass = tier === 2 ? ' skill-chip--tier2' : ''
   return `
-    <li class="skill-chip skill-chip--${slot.status}">
+    <li class="skill-chip skill-chip--${slot.status}${tierClass}">
       <span class="skill-chip__kind">${statusLabel}</span>
       <span class="skill-chip__name">${slot.skillName || '—'}</span>
     </li>
@@ -462,12 +486,13 @@ function renderMemberCol(m: DeckMatch['members'][0], def?: Deck['members'][0]): 
           ${
             altNames.length
               ? altNames
-                  .map(
-                    (name) => `<li class="skill-chip skill-chip--alt-pool">
+                  .map((name) => {
+                    const tierClass = skillTier(name) === 2 ? ' skill-chip--tier2' : ''
+                    return `<li class="skill-chip skill-chip--alt-pool${tierClass}">
                   <span class="skill-chip__kind">대체</span>
                   <span class="skill-chip__name">${name}</span>
-                </li>`,
-                  )
+                </li>`
+                  })
                   .join('')
               : ''
           }
@@ -544,7 +569,7 @@ function toggleMyCombo(deckId: string): void {
     }
     const match = findMatchForSave(deckId)
     if (!match) return
-    state.myCombos.unshift(
+    state.myCombos.push(
       createSavedCombo({
         deck: match.deck,
         members: match.members,
@@ -554,6 +579,7 @@ function toggleMyCombo(deckId: string): void {
   }
   state.comboCheck = null
   state.comboReplacements = []
+  state.skillFixPlan = null
   saveMyCombos(state.myCombos, state.season)
   updateSaveComboButtons(deckId)
   if (state.page === 'mine') render()
@@ -563,8 +589,13 @@ function removeMyCombo(deckId: string): void {
   state.myCombos = state.myCombos.filter((c) => c.deckId !== deckId)
   state.comboCheck = null
   state.comboReplacements = []
+  state.skillFixPlan = null
   saveMyCombos(state.myCombos, state.season)
   render()
+}
+
+function ownedSkillsForCheck(): ReadonlySet<string> | null {
+  return state.trackSkills ? state.ownedSkills : null
 }
 
 function runMyComboCheck(): void {
@@ -573,9 +604,22 @@ function runMyComboCheck(): void {
   for (const o of check.generalOverlaps) o.name = generalName(o.id)
   for (const o of check.skillOverlaps) o.name = skillName(o.id)
   state.comboCheck = check
-  state.comboReplacements = check.ok
-    ? []
-    : suggestReplacements(state.myCombos, check, seasonDecks(), skillName, generalName)
+  if (check.ok) {
+    state.comboReplacements = []
+    state.skillFixPlan = null
+  } else {
+    state.skillFixPlan =
+      check.skillOverlaps.length > 0
+        ? planSkillFixes(state.myCombos, check, ownedSkillsForCheck(), skillName)
+        : { skillResolvable: true, fixes: [], resolved: null }
+    state.comboReplacements = suggestReplacements(
+      state.myCombos,
+      check,
+      seasonDecks(),
+      skillName,
+      generalName,
+    )
+  }
   render()
   const firstConflict = state.comboCheck?.conflictDeckIds[0]
   if (firstConflict) {
@@ -592,21 +636,57 @@ function confirmMyCombosOk(): void {
   if (!state.comboCheck?.ok) return
   state.comboCheck = null
   state.comboReplacements = []
+  state.skillFixPlan = null
   render()
+}
+
+function applySkillSwap(
+  deckId: string,
+  memberIndex: number,
+  slotIndex: 0 | 1,
+  skillId: string,
+): void {
+  const idx = state.myCombos.findIndex((c) => c.deckId === deckId)
+  if (idx < 0) return
+  const next = applySkillToCombo(state.myCombos[idx], memberIndex, slotIndex, skillId, skillName)
+  if (!next) return
+  state.myCombos[idx] = next
+  saveMyCombos(state.myCombos, state.season)
+  runMyComboCheck()
+}
+
+function applyAllSkillFixes(): void {
+  const plan = state.skillFixPlan
+  if (!plan?.resolved) return
+  const byId = new Map(plan.resolved.map((r) => [r.deckId, r]))
+  state.myCombos = state.myCombos.map((c) => {
+    const r = byId.get(c.deckId)
+    if (!r) return c
+    return {
+      ...c,
+      members: r.members,
+      altUsedCount: r.altUsedCount,
+    }
+  })
+  saveMyCombos(state.myCombos, state.season)
+  runMyComboCheck()
 }
 
 function applyReplacement(targetDeckId: string, altDeckId: string): void {
   const suggestion = state.comboReplacements.find((s) => s.targetDeckId === targetDeckId)
   const alt = suggestion?.alternatives.find((a) => a.deck.id === altDeckId)
   if (!alt) return
-  state.myCombos = state.myCombos.filter((c) => c.deckId !== targetDeckId)
-  state.myCombos.unshift(
-    createSavedCombo({
-      deck: alt.deck,
-      members: alt.members,
-      altUsedCount: alt.altUsedCount,
-    }),
-  )
+  const idx = state.myCombos.findIndex((c) => c.deckId === targetDeckId)
+  const next = createSavedCombo({
+    deck: alt.deck,
+    members: alt.members,
+    altUsedCount: alt.altUsedCount,
+  })
+  if (idx < 0) {
+    state.myCombos.push(next)
+  } else {
+    state.myCombos.splice(idx, 1, next)
+  }
   saveMyCombos(state.myCombos, state.season)
   runMyComboCheck()
 }
@@ -753,10 +833,12 @@ function renderStarRating(
     })
     .join('')
   const hits = interactive
-    ? `<div class="star-rating__hits">${Array.from({ length: 10 }, (_, i) => {
-        const v = ((i + 1) * 0.5).toFixed(1)
-        return `<button type="button" class="star-rating__hit" data-rate-deck="${deckId}" data-rate-value="${v}" aria-label="${v}점"></button>`
-      }).join('')}</div>`
+    ? `<div class="star-rating__hits">${([1, 2, 3, 4, 5] as const)
+        .map(
+          (v) =>
+            `<button type="button" class="star-rating__hit" data-rate-deck="${deckId}" data-rate-value="${v}" aria-label="${v}점"></button>`,
+        )
+        .join('')}</div>`
     : ''
   const countHtml =
     kind === 'avg' && opts?.countLabel
@@ -826,6 +908,7 @@ function applyRatingStat(deckId: string, stat: DeckRatingStat): void {
 async function setDeckRating(deckId: string, picked: number): Promise<void> {
   const current = myRatingValue(deckId)
   const next = nextRating(current, picked)
+  state.ratingStats[deckId] = withLocalRatingChange(state.ratingStats[deckId], current, next)
   if (next !== 0) state.deckRatings[deckId] = next
   else delete state.deckRatings[deckId]
   saveDeckRatings(state.deckRatings)
@@ -1033,6 +1116,44 @@ function renderSkillPanels(): string {
   const list = filteredSkills()
   if (list.length === 0) return '<p class="empty-hint">검색 결과가 없습니다.</p>'
 
+  const tier1 = list.filter((s) => s.tier === 1)
+  const tier2 = list.filter((s) => s.tier === 2)
+
+  const renderGroup = (title: string, skillsInTier: Skill[], tier: 1 | 2) => {
+    if (skillsInTier.length === 0) return ''
+    return `
+      <section class="skill-tier-section skill-tier-section--${tier}" aria-label="${title}">
+        <h3 class="skill-tier-section__title">
+          <span class="skill-tier-section__badge">${tier}티어</span>
+          <span class="skill-tier-section__count">${skillsInTier.length}</span>
+        </h3>
+        <div class="general-grid skill-grid">
+          ${skillsInTier
+            .map((s) => {
+              const on = state.ownedSkills.has(s.id)
+              const dim = state.trackSkills ? '' : 'is-dim'
+              return `
+            <button
+              type="button"
+              class="general-chip skill-pick skill-pick--tier${s.tier} ${on && state.trackSkills ? 'is-on' : ''} ${dim}"
+              data-id="${s.id}"
+              data-kind="skill"
+              data-skill-tier="${s.tier}"
+              aria-pressed="${on}"
+              ${state.trackSkills ? '' : 'disabled'}
+            >
+              <span class="general-chip__rarity">${s.tier}티어</span>
+              <span class="general-chip__name">${displaySkillName(s.name)}</span>
+              <span class="general-chip__check" aria-hidden="true"></span>
+            </button>
+          `
+            })
+            .join('')}
+        </div>
+      </section>
+    `
+  }
+
   return `
     <div class="skill-track-banner">
       <label class="toggle">
@@ -1044,28 +1165,8 @@ function renderSkillPanels(): string {
         「전체 선택」으로 다시 모두 고를 수 있습니다.
       </p>
     </div>
-    <div class="general-grid skill-grid">
-      ${list
-        .map((s) => {
-          const on = state.ownedSkills.has(s.id)
-          const dim = state.trackSkills ? '' : 'is-dim'
-          return `
-            <button
-              type="button"
-              class="general-chip skill-pick ${on && state.trackSkills ? 'is-on' : ''} ${dim}"
-              data-id="${s.id}"
-              data-kind="skill"
-              aria-pressed="${on}"
-              ${state.trackSkills ? '' : 'disabled'}
-            >
-              <span class="general-chip__rarity">전법</span>
-              <span class="general-chip__name">${displaySkillName(s.name)}</span>
-              <span class="general-chip__check" aria-hidden="true"></span>
-            </button>
-          `
-        })
-        .join('')}
-    </div>
+    ${renderGroup('1티어 전법', tier1, 1)}
+    ${renderGroup('2티어 전법', tier2, 2)}
   `
 }
 
@@ -1115,14 +1216,16 @@ function renderShellChrome(): string {
           }).join('')}
         </ul>
       </div>
-      <img
-        class="site-brand"
-        src="${import.meta.env.BASE_URL}brand/samdeck-logo.png"
-        alt="SamDeck"
-        width="1023"
-        height="341"
-        decoding="async"
-      />
+      <button type="button" class="site-brand-btn" id="site-brand-btn" aria-label="SamDeck 홈으로">
+        <img
+          class="site-brand"
+          src="${import.meta.env.BASE_URL}brand/samdeck-logo.png"
+          alt="SamDeck"
+          width="1023"
+          height="341"
+          decoding="async"
+        />
+      </button>
     </div>
 
     <header class="hero">
@@ -1336,6 +1439,7 @@ function renderComboCheckPanel(): string {
 
   const g = check.generalOverlaps.length
   const s = check.skillOverlaps.length
+  const plan = state.skillFixPlan
   const summary = [
     g ? `장수 ${g}` : '',
     s ? `전법 ${s}` : '',
@@ -1343,13 +1447,27 @@ function renderComboCheckPanel(): string {
     .filter(Boolean)
     .join(' · ')
 
+  const skillHint =
+    s === 0
+      ? ''
+      : plan?.skillResolvable
+        ? `<p class="combo-check__hint combo-check__hint--ok">같은 장수로 대체 전법을 쓰면 전법 겹침을 해소할 수 있습니다. 아래 추천을 누르거나 「추천 전법 일괄 적용」을 사용하세요.</p>
+           <button type="button" class="combo-skill-apply-all" id="combo-skill-apply-all">추천 전법 일괄 적용</button>`
+        : `<p class="combo-check__hint">전법 겹침이 있습니다. 카드 아래 대체 전법을 눌러 나의 조합만 바꿔 보세요. (카탈로그 추천 데이터는 변하지 않습니다.)</p>`
+
+  const generalHint =
+    g > 0
+      ? `<p class="combo-check__hint">장수가 겹치면 덱을 바꾸거나 삭제해야 합니다. 아래 교체 후보를 참고하세요.</p>`
+      : ''
+
   return `
     <section id="combo-check-result" class="combo-check combo-check--bad" aria-live="polite">
       <div class="combo-check__head">
         <p class="combo-check__verdict">겹침 있음</p>
         <p class="combo-check__summary">${summary}</p>
       </div>
-      <p class="combo-check__hint">빨간 테두리 조합을 바꾸거나, 각 카드 아래 교체 후보를 고르세요.</p>
+      ${generalHint}
+      ${skillHint}
       <ul class="combo-check__chips">
         ${overlapChips(check.generalOverlaps, '장수')}
         ${overlapChips(check.skillOverlaps, '전법')}
@@ -1387,11 +1505,69 @@ function overlapsTouchingDeck(deckId: string): { kind: string; name: string; oth
   return out
 }
 
+function renderSkillFixPanel(deckId: string): string {
+  const fixes = state.skillFixPlan?.fixes.filter((f) => f.deckId === deckId) ?? []
+  if (fixes.length === 0) return ''
+
+  const rows = fixes
+    .map((fix) => {
+      const opts = fix.options
+        .map((o) => {
+          const cls = [
+            'mine-skill-fix__opt',
+            o.recommended ? 'is-recommended' : '',
+            o.usedElsewhere ? 'is-used' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
+          const label = o.status === 'alt' ? `대체 · ${o.skillName}` : o.skillName
+          const title = o.usedElsewhere
+            ? '다른 나의 조합에서 사용 중'
+            : o.recommended
+              ? '추천 대체 전법'
+              : '이 전법으로 변경'
+          return `
+            <button
+              type="button"
+              class="${cls}"
+              title="${title}"
+              data-skill-swap="${deckId}"
+              data-member-index="${fix.memberIndex}"
+              data-slot-index="${fix.slotIndex}"
+              data-skill-id="${o.skillId}"
+              ${o.usedElsewhere ? 'disabled' : ''}
+            >${label}${o.recommended ? ' ★' : ''}</button>
+          `
+        })
+        .join('')
+
+      return `
+        <li class="mine-skill-fix__row">
+          <p class="mine-skill-fix__from">
+            <strong>${fix.generalName}</strong>
+            <span>${fix.fromSkillName}</span>
+            <span class="mine-skill-fix__arrow">→</span>
+          </p>
+          <div class="mine-skill-fix__opts">${opts}</div>
+        </li>
+      `
+    })
+    .join('')
+
+  return `
+    <div class="mine-skill-fix">
+      <p class="mine-skill-fix__label">대체 전법 (누르면 나의 조합만 변경)</p>
+      <ul class="mine-skill-fix__list">${rows}</ul>
+    </div>
+  `
+}
+
 function renderMineReplacePanel(deckId: string): string {
   const suggestion = state.comboReplacements.find((s) => s.targetDeckId === deckId)
-  if (!suggestion) return ''
-
   const touches = overlapsTouchingDeck(deckId)
+  const hasGeneralConflict = touches.some((t) => t.kind === '장수')
+  const skillFixHtml = renderSkillFixPanel(deckId)
+
   const why =
     touches.length === 0
       ? ''
@@ -1406,22 +1582,18 @@ function renderMineReplacePanel(deckId: string): string {
             .join('')}
         </ul>`
 
-  if (suggestion.alternatives.length === 0) {
-    return `
-      <div class="mine-fix">
-        <p class="mine-fix__label">겹침 원인</p>
-        ${why}
-        <p class="mine-fix__empty">나머지 조합과 안 겹치는 교체 후보가 없습니다.</p>
-      </div>
-    `
-  }
-
-  const rows = suggestion.alternatives
-    .slice(0, 3)
-    .map((alt) => {
-      const formation = alt.deck.formation?.trim() ?? ''
-      const altNote = alt.altUsedCount ? ` · 대체 ${alt.altUsedCount}` : ''
-      return `
+  const deckAlts =
+    !suggestion || suggestion.alternatives.length === 0
+      ? hasGeneralConflict
+        ? `<p class="mine-fix__empty">나머지 조합과 안 겹치는 교체 후보가 없습니다.</p>`
+        : ''
+      : (() => {
+          const rows = suggestion.alternatives
+            .slice(0, 3)
+            .map((alt) => {
+              const formation = alt.deck.formation?.trim() ?? ''
+              const altNote = alt.altUsedCount ? ` · 대체 ${alt.altUsedCount}` : ''
+              return `
         <li class="mine-fix__row">
           <div class="mine-fix__meta">
             <span class="tier-badge tier-${alt.deck.tier}">${alt.deck.tier}티어</span>
@@ -1437,15 +1609,22 @@ function renderMineReplacePanel(deckId: string): string {
           >교체</button>
         </li>
       `
-    })
-    .join('')
+            })
+            .join('')
+          return `
+      <p class="mine-fix__label mine-fix__label--alts">덱 교체 후보</p>
+      <ul class="mine-fix__list">${rows}</ul>
+    `
+        })()
+
+  if (!why && !skillFixHtml && !deckAlts) return ''
 
   return `
     <div class="mine-fix">
       <p class="mine-fix__label">겹침 원인</p>
       ${why}
-      <p class="mine-fix__label mine-fix__label--alts">교체 후보</p>
-      <ul class="mine-fix__list">${rows}</ul>
+      ${skillFixHtml}
+      ${deckAlts}
     </div>
   `
 }
@@ -1468,7 +1647,7 @@ function renderMinePage(): string {
       <header class="result-hero">
         <div class="result-hero__row">
           <h1 class="result-hero__title">나의 조합 <strong>${n}/${MAX_MY_COMBOS}</strong></h1>
-          <p class="result-hero__sub">브라우저에 저장됩니다. 조합 검사로 장수·전법 겹침을 확인할 수 있습니다.</p>
+          <p class="result-hero__sub">브라우저에 저장됩니다. 조합 검사로 장수·전법 겹침을 확인하고, 전법은 대체로 바꿀 수 있습니다.</p>
         </div>
         <button type="button" class="combo-check-btn" id="combo-check-btn">
           ${state.comboCheck ? '다시 검사' : '조합 검사'}
@@ -1556,6 +1735,7 @@ function bindSaveComboButtons(root: ParentNode = document): void {
 function bindMine(): void {
   document.querySelector('#combo-check-btn')?.addEventListener('click', runMyComboCheck)
   document.querySelector('#combo-confirm-btn')?.addEventListener('click', confirmMyCombosOk)
+  document.querySelector('#combo-skill-apply-all')?.addEventListener('click', applyAllSkillFixes)
   document.querySelectorAll<HTMLButtonElement>('[data-remove-combo]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.removeCombo
@@ -1567,6 +1747,17 @@ function bindMine(): void {
       const target = btn.dataset.applyReplace
       const alt = btn.dataset.altDeck
       if (target && alt) applyReplacement(target, alt)
+    })
+  })
+  document.querySelectorAll<HTMLButtonElement>('[data-skill-swap]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const deckId = btn.dataset.skillSwap
+      const memberIndex = Number(btn.dataset.memberIndex)
+      const slotIndex = Number(btn.dataset.slotIndex) as 0 | 1
+      const skillId = btn.dataset.skillId
+      if (!deckId || !skillId || Number.isNaN(memberIndex)) return
+      if (slotIndex !== 0 && slotIndex !== 1) return
+      applySkillSwap(deckId, memberIndex, slotIndex, skillId)
     })
   })
 }
@@ -1660,6 +1851,8 @@ function bindSeasonSelect(): void {
 function bindShell(): void {
   closeDeckModal()
   bindSeasonSelect()
+
+  document.querySelector('#site-brand-btn')?.addEventListener('click', goHome)
 
   document.querySelectorAll<HTMLButtonElement>('[data-nav]').forEach((btn) => {
     btn.addEventListener('click', () => {

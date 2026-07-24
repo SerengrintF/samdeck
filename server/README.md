@@ -46,4 +46,5 @@ npm run smoke
 - `GET /` — 안내 페이지
 - `GET /health`
 - `GET /ratings?deckIds=id1,id2` + 헤더 `X-Voter-Id`
-- `PUT /ratings/:deckId` body `{ "score": 4.5 }` 또는 `{ "score": null }` + `X-Voter-Id`
+- `PUT /ratings/:deckId` body `{ "score": 4 }` 또는 `{ "score": null }` + `X-Voter-Id`  
+  (점수는 **1~5 정수**)

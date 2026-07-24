@@ -1,5 +1,6 @@
 import type { Deck, DeckMember, Doctrine, Faction, General, SeasonId, Skill } from '../types'
 import { normList, normName } from './normalize'
+import { skillTier } from './skillTiers'
 
 /** 표 한 명의 장수 행 → DeckMember (대체 전법은 두 슬롯 공유 풀) */
 export function mem(
@@ -105,8 +106,18 @@ export function buildSkillsFromDecks(source: Deck[], seasonId: SeasonId): Skill[
     }
   }
   return [...names]
-    .sort((a, b) => a.localeCompare(b, 'ko'))
-    .map((name) => ({ id: name, name, seasons: [seasonId] }))
+    .sort((a, b) => {
+      const ta = skillTier(a)
+      const tb = skillTier(b)
+      if (ta !== tb) return ta - tb
+      return a.localeCompare(b, 'ko')
+    })
+    .map((name) => ({
+      id: name,
+      name,
+      seasons: [seasonId],
+      tier: skillTier(name),
+    }))
 }
 
 export function buildDoctrinesFromDecks(source: Deck[], seasonId: SeasonId): Doctrine[] {

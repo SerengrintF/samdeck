@@ -38,7 +38,9 @@ export function loadMyCombos(season: SeasonId = DEFAULT_SEASON): SavedCombo[] {
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(isSavedCombo)
+    return parsed
+      .filter(isSavedCombo)
+      .sort((a, b) => a.savedAt - b.savedAt)
   } catch {
     return []
   }
