@@ -25,7 +25,7 @@ export function formatRating(value: number): string {
 
 export function formatRatingCount(count: number): string {
   if (count <= 0) return ''
-  return `${count}명`
+  return String(count)
 }
 
 export function ratingsApiBase(): string | null {

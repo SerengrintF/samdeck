@@ -1,7 +1,9 @@
 name: Deploy GitHub Pages
 
-# 자동 배포 없음 — 채팅에서 배포 요청 시 workflow_dispatch 로만 실행
+# 배포 요청 시 push로 한 번 실행 후, 다시 workflow_dispatch 만 남김
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
