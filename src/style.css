@@ -692,6 +692,140 @@ body.modal-open .dock {
   line-height: 1.5;
 }
 
+/* —— Info pages (guide / legal) —— */
+.page-body--info {
+  padding-top: 8px;
+}
+
+.info-page__header {
+  margin: 0 0 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.info-page__title {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4vw, 1.7rem);
+  font-weight: 700;
+  color: var(--gold-soft);
+  letter-spacing: 0.04em;
+}
+
+.info-page__updated {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.prose {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.prose h2 {
+  margin: 1.6em 0 0.55em;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.03em;
+}
+
+.prose h3 {
+  margin: 1.25em 0 0.4em;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.prose p {
+  margin: 0 0 0.9em;
+}
+
+.prose ul {
+  margin: 0 0 1em;
+  padding-left: 1.2em;
+}
+
+.prose li {
+  margin: 0.35em 0;
+}
+
+.prose a {
+  color: var(--gold-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose a:hover {
+  color: var(--gold);
+}
+
+.prose code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 0.88em;
+  word-break: break-all;
+}
+
+.site-footer {
+  margin: 36px 0 8px;
+  padding: 18px 4px 8px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.site-footer__disclaimer {
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.site-footer__disclaimer strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.site-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 4px;
+}
+
+.site-footer__link {
+  margin: 0;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: transparent;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.site-footer__link:hover,
+.site-footer__link.is-active {
+  color: var(--gold-soft);
+  text-decoration-color: rgba(224, 197, 106, 0.5);
+}
+
+.site-footer__sep {
+  color: rgba(168, 152, 128, 0.45);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
 .rule-strip {
   display: flex;
   flex-wrap: wrap;

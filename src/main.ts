@@ -55,8 +55,16 @@ import type {
   Skill,
 } from './types'
 import { SET_SIZE } from './types'
+import {
+  isInfoPage,
+  renderInfoPage,
+  renderSiteFooter,
+  type InfoPage,
+} from './sitePages'
 
-type NavPage = 'recommend' | 'roster' | 'mine'
+type AppPage = 'recommend' | 'roster' | 'mine'
+type NavPage = AppPage | InfoPage
+const APP_PAGES: AppPage[] = ['recommend', 'roster', 'mine']
 type RosterTab = 'generals' | 'skills'
 /** browse = 메뉴 페이지, set-result = 장수 조합의 세트 추천 결과 */
 type AppView = 'browse' | 'set-result'
@@ -165,6 +173,26 @@ function setPage(page: NavPage): void {
   if (page === 'roster' && !state.tab) state.tab = 'generals'
   render()
   if (window.scrollY > 0) window.scrollTo(0, 0)
+}
+
+function documentTitleForPage(): string {
+  if (state.view === 'set-result') return '세트 추천 · SamDeck'
+  switch (state.page) {
+    case 'guide':
+      return '사용 가이드 · SamDeck'
+    case 'about':
+      return '소개·면책 · SamDeck'
+    case 'privacy':
+      return '개인정보처리방침 · SamDeck'
+    case 'contact':
+      return '문의 · SamDeck'
+    case 'roster':
+      return '장수 조합 · SamDeck'
+    case 'mine':
+      return '나의 조합 · SamDeck'
+    default:
+      return 'SamDeck · 천하결전 장수 조합'
+  }
 }
 
 /** 타이틀 로고 → 첫 화면(조합 추천) */
@@ -1171,7 +1199,12 @@ function renderSkillPanels(): string {
 }
 
 function renderShellChrome(): string {
-  const navActive = state.view === 'set-result' ? 'roster' : state.page
+  const navActive: AppPage | null =
+    state.view === 'set-result'
+      ? 'roster'
+      : APP_PAGES.includes(state.page as AppPage)
+        ? (state.page as AppPage)
+        : null
   const showSub = navActive === 'roster'
   const seasonMeta = getSeasonMeta(state.season)
 
@@ -1278,6 +1311,11 @@ function renderShellChrome(): string {
       </div>
     </nav>
   `
+}
+
+function renderPageFooter(): string {
+  const infoActive = isInfoPage(state.page) ? state.page : null
+  return renderSiteFooter(infoActive)
 }
 
 function renderRecommendPage(): string {
@@ -1716,6 +1754,7 @@ function renderSetResultPage(): string {
 
 function renderPageBody(): string {
   if (state.view === 'set-result') return renderSetResultPage()
+  if (isInfoPage(state.page)) return renderInfoPage(state.page)
   if (state.page === 'recommend') return renderRecommendPage()
   if (state.page === 'mine') return renderMinePage()
   return renderRosterPage()
@@ -1906,10 +1945,12 @@ function bindSetResult(): void {
 }
 
 function render(): void {
+  document.title = documentTitleForPage()
   app.innerHTML = `
     <main class="page page--with-dock">
       ${renderShellChrome()}
       ${renderPageBody()}
+      ${renderPageFooter()}
     </main>
   `
   bindShell()
