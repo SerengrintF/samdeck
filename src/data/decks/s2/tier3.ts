@@ -51,7 +51,7 @@ export const s2Tier3Decks: Deck[] = [
     name: '주태·감녕·손권',
     season: 'S2',
     tier: 3,
-    formation: '추원형',
+    formation: '추형진',
     members: [
       mem('주태', '금성의 철벽', '일심협력', ['경무장'], ['불굴', '무렬', '수세']),
       mem('감녕', '병력강화', '일인천군', ['용맹한 삼군', '강습'], [
@@ -111,7 +111,7 @@ export const s2Tier3Decks: Deck[] = [
     name: '원소·공손찬·전풍',
     season: 'S2',
     tier: 3,
-    formation: '추원형',
+    formation: '추형진',
     members: [
       mem('원소', '백전불태', '강철의 의지', ['보급 차단'], ['피험', '수세', '절봉']),
       mem('공손찬', '연전연승', '패잔병 척결', ['늠름한 자태'], [

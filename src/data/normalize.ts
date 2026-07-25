@@ -1,5 +1,9 @@
+import { zhSkillToKo } from './zhKoSkills'
+import { zhDoctrineToKo } from './zhKoDoctrines'
+
 /**
  * 표 데이터 표기 흔들림을 하나로 맞춥니다.
+ * 중국어 전법·병법명은 zhKo* 표에서 한국어로 바꾼 뒤 이 표를 적용합니다.
  */
 const ALIASES: Record<string, string> = {
   예리한통찰: '예리한 통찰',
@@ -24,6 +28,10 @@ const ALIASES: Record<string, string> = {
   '양책 수립': '양책수립',
   '전략 계획': '전략계획',
   도광양희: '도광양회',
+  '재능 은닉': '도광양회',
+  '인재 등용': '임인유현',
+  '맹렬 추격': '궁추불사',
+  '허실 간파': '허실간파',
   출가불의: '출기불의',
   응성: '의성',
   '삼군 압도': '삼군압도',
@@ -35,6 +43,7 @@ const ALIASES: Record<string, string> = {
   난공불략: '난공불락',
   일인천국: '일인천군',
   '민중 봉기': '민중봉기',
+  '민중 병기': '민중봉기',
   '순간 돌습': '순간돌습',
   '포위 돌파': '포위돌파',
   '화공 전술': '화공전술',
@@ -48,24 +57,24 @@ const ALIASES: Record<string, string> = {
   듬직한자태: '늠름한 자태',
   '듬직한 자태': '늠름한 자태',
   팔방전전: '팔방전',
+  팔방진: '팔방전',
+  신속진개: '신속전개',
   만두: '만투',
   려군: '여군',
   大모: '대모',
   '맹덕신서 상권': '<맹덕신서>상',
   '맹덕신서 하권': '<맹덕신서>하',
+  '<맹덕신서> 상': '<맹덕신서>상',
+  '<맹덕신서> 하': '<맹덕신서>하',
   '낙신부 하권': '<낙신부>하',
   '낙신부 상권': '<낙신부>상',
+  '<낙신부> 상': '<낙신부>상',
+  '<낙신부> 하': '<낙신부>하',
   칠군수물: '칠군수몰',
   공근선: '공근신',
   정남사공: '정남권종',
   '세금 과징': '세금과징수',
   기문遁갑: '기문둔갑',
-  合聚群雄: '합취군웅',
-  诡道玄机: '궤도현기',
-  任人唯贤: '임인유현',
-  折节学问: '절절학문',
-  纵马横枪: '종마횡창',
-  穷追不舍: '궁추불사',
 }
 
 const CJK = /[\u4e00-\u9fff]/
@@ -73,12 +82,11 @@ const CJK = /[\u4e00-\u9fff]/
 /** CJK 별칭이 있어도 한글명 확정된 항목 */
 const VERIFIED_DESPITE_CJK_ALIAS = new Set(['대모'])
 
-/** 중국어에서 옮긴 전법명 — UI에 (확인중) 표시 */
+/** 중국어에서 옮긴 뒤에도 표기가 확정되지 않은 전법 — UI에 (확인중) */
 export const UNVERIFIED_SKILL_NAMES = new Set(
-  Object.entries(ALIASES)
-    .filter(([from]) => CJK.test(from))
-    .map(([, to]) => to)
-    .filter((to) => !VERIFIED_DESPITE_CJK_ALIAS.has(to)),
+  ['합취군웅', '궤도현기', '임인유현', '절절학문', '종마횡창', '궁추불사'].filter(
+    (to) => !VERIFIED_DESPITE_CJK_ALIAS.has(to),
+  ),
 )
 
 export function displaySkillName(name: string): string {
@@ -86,10 +94,19 @@ export function displaySkillName(name: string): string {
   return UNVERIFIED_SKILL_NAMES.has(name) ? `${name} (확인중)` : name
 }
 
+function applyKoAlias(t: string): string {
+  return ALIASES[t] ?? ALIASES[t.replace(/\s/g, '')] ?? t
+}
+
+function zhToKo(raw: string): string | null {
+  return zhSkillToKo(raw) ?? zhDoctrineToKo(raw)
+}
+
 export function normName(raw: string): string {
   const t = raw.trim().replace(/\s+/g, ' ')
   if (!t || t === '없음') return ''
-  return ALIASES[t] ?? ALIASES[t.replace(/\s/g, '')] ?? t
+  const fromZh = CJK.test(t) ? zhToKo(t) : null
+  return applyKoAlias(fromZh ?? t)
 }
 
 export function normList(items: string[]): string[] {

@@ -263,7 +263,7 @@ export const s2Tier2Decks: Deck[] = [
     name: '전풍·장료·원소',
     season: 'S2',
     tier: 2,
-    formation: '추원형',
+    formation: '추형진',
     members: [
       mem('전풍', '천하평론', '결사의 다짐', ['허점공략', '청풍질주', '청낭 치료'], [
         '권략',
@@ -647,30 +647,6 @@ export const s2Tier2Decks: Deck[] = [
     ],
   },
   {
-    id: 's2-t2-cao-dian-huangyueying',
-    name: '조조·전위·황월영',
-    season: 'S2',
-    tier: 2,
-    formation: '추원형',
-    members: [
-      mem('조조', '결사의 다짐', '정의의 희생', ['전쟁종식', '허점공략', '전장의 노래'], [
-        '<맹덕신서>하',
-        '선용',
-        '절봉',
-      ]),
-      mem('전위', '일인천군', '용맹한 삼군', ['강습', '청야전술', '견고한 방어', '위기의 결전'], [
-        '절무',
-        '집기',
-        '분합',
-      ]),
-      mem('황월영', '예리한 판단', '백전불태', ['청낭 치료', '보급차단', '전략계획', '청풍질주'], [
-        '기관술',
-        '임봉',
-        '위수',
-      ]),
-    ],
-  },
-  {
     id: 's2-t2-jian-daqiao-sunshangxiang',
     name: '견희·대교·손상향',
     season: 'S2',
@@ -947,7 +923,7 @@ export const s2Tier2Decks: Deck[] = [
     name: '소교·육손·손권',
     season: 'S2',
     tier: 2,
-    formation: '추원형',
+    formation: '추형진',
     members: [
       mem('소교', '예측의 신', '기문둔갑', ['방화범', '속수무책'], ['공근신', '기동', '여심']),
       mem('육손', '도광양회', '세금 과징수', ['지혜의 바람'], ['분량', '탈계', '기동']),
@@ -1051,7 +1027,7 @@ export const s2Tier2Decks: Deck[] = [
     name: '감부인·조운·공손찬',
     season: 'S2',
     tier: 2,
-    formation: '추원형',
+    formation: '추형진',
     members: [
       mem('감부인', '백전불태', '문과 양', ['준비 완료', '전쟁 종식'], [
         '한녀전',
