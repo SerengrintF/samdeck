@@ -50,6 +50,7 @@ export const GENERAL_META: Record<string, { faction: Faction; rarity: General['r
   사마의: { faction: '위', rarity: 'SSR' },
   악진: { faction: '위', rarity: 'SSR' },
   순욱: { faction: '위', rarity: 'SSR' },
+  조인: { faction: '위', rarity: 'SSR' },
   장합: { faction: '위', rarity: 'SSR' },
   서성: { faction: '오', rarity: 'SSR' },
   황개: { faction: '오', rarity: 'SSR' },
@@ -80,6 +81,7 @@ export const GENERAL_META: Record<string, { faction: Faction; rarity: General['r
   공손찬: { faction: '군', rarity: 'SSR' },
   문추: { faction: '군', rarity: 'SSR' },
   안량: { faction: '군', rarity: 'SSR' },
+  화타: { faction: '군', rarity: 'SSR' },
 }
 
 export function buildGeneralsFromDecks(source: Deck[], seasonId: SeasonId): General[] {

@@ -22,6 +22,16 @@ import {
   type DeckRatingStat,
   type RatingValue,
 } from './ratings'
+import {
+  TIP_MAX_LEN,
+  TIP_PREVIEW,
+  fetchDeckTips,
+  isTipsApiConfigured,
+  pickTipHint,
+  pickTipPlaceholder,
+  upsertDeckTip,
+  type DeckTipsPayload,
+} from './tips'
 import { createSavedCombo, loadMyCombos, saveMyCombos, type SavedCombo } from './myCombos'
 import {
   MAX_MY_COMBOS,
@@ -165,14 +175,23 @@ function setSeason(id: SeasonId): void {
   render()
 }
 
+function scrollToTopInstant(): void {
+  const html = document.documentElement
+  const prev = html.style.scrollBehavior
+  html.style.scrollBehavior = 'auto'
+  window.scrollTo(0, 0)
+  html.style.scrollBehavior = prev
+}
+
 function setPage(page: NavPage): void {
   if (state.view === 'browse' && state.page === page) return
   state.view = 'browse'
   state.page = page
   state.query = ''
   if (page === 'roster' && !state.tab) state.tab = 'generals'
+  scrollToTopInstant()
   render()
-  if (window.scrollY > 0) window.scrollTo(0, 0)
+  scrollToTopInstant()
 }
 
 function documentTitleForPage(): string {
@@ -206,8 +225,9 @@ function goHome(): void {
     if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' })
     return
   }
+  scrollToTopInstant()
   render()
-  if (window.scrollY > 0) window.scrollTo(0, 0)
+  scrollToTopInstant()
 }
 
 function filteredGenerals(): General[] {
@@ -790,13 +810,22 @@ function renderDeckCard(
   `
 }
 
-function renderComboCard(deck: Deck): string {
+function renderComboCard(deck: Deck, opts?: { rank?: number }): string {
   const match = deckToDisplayMatch(deck)
   const formation = deck.formation?.trim()
+  const rank = opts?.rank
+  const rankHtml =
+    rank != null
+      ? `<span class="combo-card__rank combo-card__rank--${rank}" aria-label="${rank}위">
+          <span class="combo-card__rank-label">TOP</span>
+          <span class="combo-card__rank-num">${rank}</span>
+        </span>`
+      : ''
   return `
-    <article class="combo-card">
+    <article class="combo-card${rank != null ? ' combo-card--ranked' : ''}">
       <button type="button" class="combo-card__main" data-deck-id="${deck.id}">
         <div class="combo-card__meta">
+          ${rankHtml}
           <span class="tier-badge tier-${deck.tier}">${deck.tier}티어</span>
           ${formation ? `<span class="formation-badge">${formation}</span>` : ''}
         </div>
@@ -809,7 +838,7 @@ function renderComboCard(deck: Deck): string {
                   <span class="combo-card__portrait">
                     ${
                       src
-                        ? `<img src="${src}" alt="" loading="lazy" width="56" height="56" />`
+                        ? `<img src="${src}" alt="" loading="lazy" width="56" height="56" draggable="false" />`
                         : `<span class="combo-card__fallback">${m.generalName.slice(0, 1)}</span>`
                     }
                   </span>
@@ -959,38 +988,35 @@ async function hydrateSeasonRatings(): Promise<void> {
   }
   saveDeckRatings(state.deckRatings)
   for (const id of Object.keys(stats)) updateRatingDisplay(id)
+
+  const intro = document.querySelector('.catalog-intro')
+  if (intro) {
+    intro.outerHTML = renderCatalogIntro(state.page === 'recommend')
+    bindTopRatedStrip()
+  }
 }
 
 let modalScrollY = 0
 
 function setModalScrollLock(locked: boolean): void {
+  const html = document.documentElement
   const isLocked = document.body.classList.contains('modal-open')
   if (locked) {
     if (isLocked) return
     modalScrollY = window.scrollY
-    const gap = Math.max(0, window.innerWidth - document.documentElement.clientWidth)
-    document.documentElement.style.setProperty('--modal-scrollbar-gap', `${gap}px`)
+    html.classList.add('modal-open')
     document.body.classList.add('modal-open')
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${modalScrollY}px`
-    document.body.style.left = '0'
-    document.body.style.right = '0'
-    document.body.style.width = '100%'
     return
   }
   if (!isLocked) return
+  html.classList.remove('modal-open')
   document.body.classList.remove('modal-open')
-  document.body.style.position = ''
-  document.body.style.top = ''
-  document.body.style.left = ''
-  document.body.style.right = ''
-  document.body.style.width = ''
-  document.documentElement.style.removeProperty('--modal-scrollbar-gap')
-  const html = document.documentElement
-  const prevBehavior = html.style.scrollBehavior
-  html.style.scrollBehavior = 'auto'
-  window.scrollTo(0, modalScrollY)
-  html.style.scrollBehavior = prevBehavior
+  if (Math.abs(window.scrollY - modalScrollY) > 1) {
+    const prev = html.style.scrollBehavior
+    html.style.scrollBehavior = 'auto'
+    window.scrollTo(0, modalScrollY)
+    html.style.scrollBehavior = prev
+  }
 }
 
 function closeDeckModal(): void {
@@ -1003,6 +1029,193 @@ function closeDeckModal(): void {
 
 function onDeckModalKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') closeDeckModal()
+}
+
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function renderTipItem(tip: { body: string; mine: boolean }): string {
+  return `
+    <li class="deck-tips__item ${tip.mine ? 'is-mine' : ''}">
+      <span class="deck-tips__body">${escapeHtml(tip.body)}</span>
+      ${tip.mine ? '<span class="deck-tips__badge">내 팁</span>' : ''}
+    </li>
+  `
+}
+
+function renderDeckTipsSection(deckId: string, data?: DeckTipsPayload | null, expanded = false): string {
+  if (!isTipsApiConfigured()) {
+    return `
+      <section class="deck-tips" data-deck-tips="${deckId}">
+        <div class="deck-tips__head">
+          <h4 class="deck-tips__title">조합 팁</h4>
+        </div>
+        <p class="deck-tips__offline">팁 공유는 온라인 연결 시 이용할 수 있습니다.</p>
+      </section>
+    `
+  }
+
+  const payload = data ?? { tips: [], count: 0, myTip: null }
+  const seed = deckId.length + payload.count
+  const hint = pickTipHint(seed)
+  const placeholder = pickTipPlaceholder(seed)
+  const myValue = payload.myTip ?? ''
+  const visible = expanded ? payload.tips : payload.tips.slice(0, TIP_PREVIEW)
+  const hidden = Math.max(0, payload.count - visible.length)
+  const canExpand = !expanded && payload.tips.length > TIP_PREVIEW
+
+  return `
+    <section class="deck-tips" data-deck-tips="${deckId}" data-tips-expanded="${expanded ? '1' : '0'}">
+      <div class="deck-tips__head">
+        <h4 class="deck-tips__title">조합 팁</h4>
+        <span class="deck-tips__count" data-tips-count>${payload.count > 0 ? `${payload.count}개` : '아직 없음'}</span>
+      </div>
+      <p class="deck-tips__hint">${escapeHtml(hint)}</p>
+      <form class="deck-tips__form" data-tips-form>
+        <label class="visually-hidden" for="deck-tip-input">내 조합 팁</label>
+        <div class="deck-tips__input-row">
+          <input
+            id="deck-tip-input"
+            class="deck-tips__input"
+            type="text"
+            name="tip"
+            maxlength="${TIP_MAX_LEN}"
+            value="${escapeHtml(myValue)}"
+            placeholder="${escapeHtml(placeholder)}"
+            autocomplete="off"
+            data-tips-input
+          />
+          <button type="submit" class="deck-tips__submit" data-tips-submit>
+            ${myValue ? '수정' : '등록'}
+          </button>
+          ${
+            myValue
+              ? `<button type="button" class="deck-tips__clear" data-tips-clear>삭제</button>`
+              : ''
+          }
+        </div>
+        <div class="deck-tips__meta">
+          <span class="deck-tips__guide">실전 한 줄 팁 · 덱당 1개</span>
+          <span class="deck-tips__len"><span data-tips-len>${myValue.length}</span>/${TIP_MAX_LEN}</span>
+        </div>
+      </form>
+      ${
+        payload.tips.length === 0
+          ? `<p class="deck-tips__empty">첫 팁을 남겨 다른 유저에게 도움을 주세요.</p>`
+          : `<ul class="deck-tips__list ${expanded ? 'is-expanded' : ''}" data-tips-list>
+              ${visible.map(renderTipItem).join('')}
+            </ul>
+            ${
+              canExpand
+                ? `<button type="button" class="deck-tips__more" data-tips-more>
+                    더보기 <span>+${hidden > 0 ? hidden : payload.tips.length - TIP_PREVIEW}</span>
+                  </button>`
+                : expanded && payload.count > TIP_PREVIEW
+                  ? `<button type="button" class="deck-tips__more" data-tips-less>접기</button>`
+                  : ''
+            }`
+      }
+      <p class="deck-tips__status" data-tips-status hidden></p>
+    </section>
+  `
+}
+
+function paintDeckTips(deckId: string, data: DeckTipsPayload, expanded = false): void {
+  const root = document.querySelector<HTMLElement>(`[data-deck-tips="${CSS.escape(deckId)}"]`)
+  if (!root) return
+  const wrap = document.createElement('div')
+  wrap.innerHTML = renderDeckTipsSection(deckId, data, expanded)
+  const next = wrap.firstElementChild
+  if (!next) return
+  root.replaceWith(next)
+  bindDeckTips(document.getElementById('deck-modal') ?? document)
+}
+
+function setTipsStatus(root: ParentNode, message: string, kind: 'ok' | 'err' | '' = ''): void {
+  const el = root.querySelector<HTMLElement>('[data-tips-status]')
+  if (!el) return
+  if (!message) {
+    el.hidden = true
+    el.textContent = ''
+    el.dataset.kind = ''
+    return
+  }
+  el.hidden = false
+  el.textContent = message
+  el.dataset.kind = kind
+}
+
+function bindDeckTips(root: ParentNode = document): void {
+  const section = root.querySelector<HTMLElement>('[data-deck-tips]')
+  if (!section || section.dataset.bound === '1') return
+  section.dataset.bound = '1'
+
+  const deckId = section.dataset.deckTips
+  if (!deckId) return
+
+  const input = section.querySelector<HTMLInputElement>('[data-tips-input]')
+  const lenEl = section.querySelector('[data-tips-len]')
+  const syncLen = (): void => {
+    if (lenEl && input) lenEl.textContent = String(input.value.length)
+  }
+  input?.addEventListener('input', syncLen)
+
+  section.querySelector('[data-tips-form]')?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    if (!input) return
+    const text = input.value
+    const submit = section.querySelector<HTMLButtonElement>('[data-tips-submit]')
+    if (submit) submit.disabled = true
+    setTipsStatus(section, '저장 중…')
+    const data = await upsertDeckTip(deckId, text)
+    if (submit) submit.disabled = false
+    if (!data) {
+      setTipsStatus(section, `저장에 실패했습니다. ${TIP_MAX_LEN}자 이내로 적어 주세요.`, 'err')
+      return
+    }
+    paintDeckTips(deckId, data, section.dataset.tipsExpanded === '1')
+  })
+
+  section.querySelector('[data-tips-clear]')?.addEventListener('click', async () => {
+    const clearBtn = section.querySelector<HTMLButtonElement>('[data-tips-clear]')
+    if (clearBtn) clearBtn.disabled = true
+    setTipsStatus(section, '삭제 중…')
+    const data = await upsertDeckTip(deckId, '')
+    if (clearBtn) clearBtn.disabled = false
+    if (!data) {
+      setTipsStatus(section, '삭제에 실패했습니다.', 'err')
+      return
+    }
+    paintDeckTips(deckId, data, false)
+  })
+
+  section.querySelector('[data-tips-more]')?.addEventListener('click', async () => {
+    const data = await fetchDeckTips(deckId)
+    if (!data) return
+    paintDeckTips(deckId, data, true)
+  })
+
+  section.querySelector('[data-tips-less]')?.addEventListener('click', async () => {
+    const data = await fetchDeckTips(deckId)
+    if (!data) return
+    paintDeckTips(deckId, data, false)
+  })
+}
+
+async function hydrateDeckTips(deckId: string): Promise<void> {
+  if (!isTipsApiConfigured()) {
+    bindDeckTips(document.getElementById('deck-modal') ?? document)
+    return
+  }
+  const data = await fetchDeckTips(deckId)
+  if (data) paintDeckTips(deckId, data, false)
+  else bindDeckTips(document.getElementById('deck-modal') ?? document)
 }
 
 function openDeckModal(deckId: string): void {
@@ -1023,6 +1236,7 @@ function openDeckModal(deckId: string): void {
     <div class="deck-modal__panel" role="dialog" aria-modal="true" aria-label="${deck.name}">
       <button type="button" class="deck-modal__close" data-close-modal aria-label="닫기">×</button>
       ${renderDeckCard(match, undefined, { showSave: true, showRating: true })}
+      ${renderDeckTipsSection(deckId)}
     </div>
   `
   document.body.appendChild(overlay)
@@ -1037,6 +1251,8 @@ function openDeckModal(deckId: string): void {
     })
   })
   bindStarRating(overlay)
+  bindDeckTips(overlay)
+  void hydrateDeckTips(deckId)
   window.addEventListener('keydown', onDeckModalKeydown)
 }
 
@@ -1207,6 +1423,7 @@ function renderShellChrome(): string {
         : null
   const showSub = navActive === 'roster'
   const seasonMeta = getSeasonMeta(state.season)
+  const showCatalogIntro = state.view === 'browse' && state.page === 'recommend'
 
   return `
     <div class="top-bar">
@@ -1310,7 +1527,145 @@ function renderShellChrome(): string {
         >보유 전법</button>
       </div>
     </nav>
+    ${showCatalogIntro ? renderCatalogIntro(true) : ''}
   `
+}
+
+/** 평점 높은 순 TOP N (동점이면 투표 수·티어 순) */
+function topRatedDecks(limit = 5): Deck[] {
+  return [...seasonDecks()]
+    .sort((a, b) => {
+      const sa = state.ratingStats[a.id]
+      const sb = state.ratingStats[b.id]
+      const avgA = sa?.average ?? 0
+      const avgB = sb?.average ?? 0
+      if (avgB !== avgA) return avgB - avgA
+      const countA = sa?.count ?? 0
+      const countB = sb?.count ?? 0
+      if (countB !== countA) return countB - countA
+      if (a.tier !== b.tier) return a.tier - b.tier
+      return a.name.localeCompare(b.name, 'ko')
+    })
+    .slice(0, limit)
+}
+
+function renderTopRatedItem(deck: Deck, rank: number): string {
+  return renderComboCard(deck, { rank })
+}
+
+function renderCatalogIntro(showTopRated = false): string {
+  const top = showTopRated ? topRatedDecks(5) : []
+  return `
+    <section class="catalog-intro" aria-label="조합 안내">
+      <p class="catalog-intro__note">
+        본 조합은 중국 커뮤니티·가이드 자료를 참고해 정리한 <strong>참고용</strong>입니다.
+        공식 티어·승률을 보장하지 않으니, 편성 시 참고만 부탁드려요.
+      </p>
+      ${
+        showTopRated
+          ? `<div class="top-rated">
+        <div class="top-rated__head">
+          <h2 class="top-rated__title">평점 TOP 5</h2>
+          <span class="top-rated__hint">좌우로 넘겨 보세요</span>
+        </div>
+        ${
+          top.length === 0
+            ? `<p class="top-rated__empty">표시할 조합이 없습니다.</p>`
+            : `<div class="top-rated__scroller" data-top-rated-scroll>
+                ${top.map((d, i) => renderTopRatedItem(d, i + 1)).join('')}
+              </div>`
+        }
+      </div>`
+          : ''
+      }
+    </section>
+  `
+}
+
+function bindTopRatedStrip(): void {
+  const intro = document.querySelector<HTMLElement>('.catalog-intro')
+  if (!intro) return
+
+  // 교체 렌더 후에도 한 번만 위임 (outerHTML 교체 시 새 노드이므로 재바인딩)
+  intro.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement
+    if (t.closest('[data-save-combo]')) return
+    const deckBtn = t.closest<HTMLElement>('[data-deck-id]')
+    if (!deckBtn || !intro.contains(deckBtn)) return
+    const id = deckBtn.dataset.deckId
+    if (id) openDeckModal(id)
+  })
+  bindSaveComboButtons(intro)
+
+  const scroller = intro.querySelector<HTMLElement>('[data-top-rated-scroll]')
+  if (!scroller) return
+
+  // 장수 이미지 네이티브 드래그가 가로 스크롤을 가로채지 않게
+  scroller.addEventListener('dragstart', (e) => e.preventDefault())
+
+  let active = false
+  let dragging = false
+  let startX = 0
+  let startScroll = 0
+  let pointerId = -1
+
+  scroller.addEventListener('pointerdown', (e) => {
+    if ((e.target as HTMLElement | null)?.closest('button.save-combo-btn')) return
+    // 터치는 네이티브 pan-x 스크롤에 맡김
+    if (e.pointerType === 'touch') return
+    active = true
+    dragging = false
+    pointerId = e.pointerId
+    startX = e.clientX
+    startScroll = scroller.scrollLeft
+  })
+
+  scroller.addEventListener('pointermove', (e) => {
+    if (!active || e.pointerId !== pointerId) return
+    const dx = e.clientX - startX
+    if (!dragging) {
+      if (Math.abs(dx) < 8) return
+      dragging = true
+      scroller.classList.add('is-dragging')
+      e.preventDefault()
+      try {
+        scroller.setPointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
+    }
+    scroller.scrollLeft = startScroll - dx
+  })
+
+  const endDrag = (e: PointerEvent): void => {
+    if (!active || e.pointerId !== pointerId) return
+    const wasDragging = dragging
+    active = false
+    dragging = false
+    pointerId = -1
+    scroller.classList.remove('is-dragging')
+    try {
+      if (scroller.hasPointerCapture(e.pointerId)) {
+        scroller.releasePointerCapture(e.pointerId)
+      }
+    } catch {
+      /* already released */
+    }
+    if (wasDragging) scroller.dataset.suppressClick = '1'
+  }
+
+  scroller.addEventListener('pointerup', endDrag)
+  scroller.addEventListener('pointercancel', endDrag)
+  scroller.addEventListener(
+    'click',
+    (e) => {
+      if (scroller.dataset.suppressClick !== '1') return
+      delete scroller.dataset.suppressClick
+      e.preventDefault()
+      e.stopPropagation()
+    },
+    true,
+  )
 }
 
 function renderPageFooter(): string {
@@ -1802,15 +2157,14 @@ function bindMine(): void {
 }
 
 function bindRecommend(): void {
-  document.querySelectorAll<HTMLButtonElement>('[data-deck-id]').forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>('.page-body--recommend [data-deck-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.deckId
       if (id) openDeckModal(id)
     })
   })
 
-  bindSaveComboButtons()
-  void hydrateSeasonRatings()
+  bindSaveComboButtons(document.querySelector('.page-body--recommend') ?? document)
 
   document.querySelectorAll<HTMLButtonElement>('[data-expand-tier]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1890,6 +2244,8 @@ function bindSeasonSelect(): void {
 function bindShell(): void {
   closeDeckModal()
   bindSeasonSelect()
+  bindTopRatedStrip()
+  void hydrateSeasonRatings()
 
   document.querySelector('#site-brand-btn')?.addEventListener('click', goHome)
 

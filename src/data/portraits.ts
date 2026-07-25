@@ -25,6 +25,7 @@ export const GENERAL_SLUG: Record<string, string> = {
   사마의: 'simayi',
   악진: 'yuejin',
   순욱: 'xunyu',
+  조인: 'caoren',
   장합: 'zhanghe',
   방통: 'pangtong',
   서성: 'xusheng',
@@ -56,6 +57,7 @@ export const GENERAL_SLUG: Record<string, string> = {
   공손찬: 'gongsunzan',
   문추: 'wenchou',
   안량: 'yanliang',
+  화타: 'huatuo',
 }
 
 export function portraitSrc(generalId: string): string | null {

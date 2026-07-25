@@ -49,8 +49,42 @@ assert(cleared.ratings[deckId].count === 1, 'after delete count should be 1')
 assert(cleared.ratings[deckId].myRating == null, 'myRating should be null')
 assert(cleared.ratings[deckId].average === 4, 'remaining average should be 4')
 
+async function getTips(voter) {
+  const res = await fetch(`${BASE}/tips/${encodeURIComponent(deckId)}`, {
+    headers: { 'X-Voter-Id': voter },
+  })
+  assert(res.ok, `GET tips failed ${res.status}`)
+  return res.json()
+}
+
+async function putTip(text, voter) {
+  const res = await fetch(`${BASE}/tips/${encodeURIComponent(deckId)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Voter-Id': voter,
+    },
+    body: JSON.stringify({ text }),
+  })
+  assert(res.ok, `PUT tip failed ${res.status}`)
+  return res.json()
+}
+
+await putTip('악진 선공을 높게', voterA)
+await putTip('주태 메타에 약함', voterB)
+const tips = await getTips(voterA)
+assert(tips.count === 2, `expected tip count 2 got ${tips.count}`)
+assert(tips.myTip === '악진 선공을 높게', 'myTip mismatch')
+assert(tips.tips[0].mine === true, 'first tip should be mine')
+
+await putTip(null, voterA)
+const tipsCleared = await getTips(voterA)
+assert(tipsCleared.count === 1, 'after tip delete count should be 1')
+assert(tipsCleared.myTip == null, 'myTip should be null')
+
 console.log('smoke ok:', {
   average: row.average,
   count: row.count,
   afterClear: cleared.ratings[deckId],
+  tips: tipsCleared.count,
 })

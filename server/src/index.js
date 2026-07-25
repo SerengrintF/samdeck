@@ -30,7 +30,12 @@ if (!USE_MEMORY && !DATABASE_URL) {
 
 /** @type {Map<string, { deckId: string, voterId: string, score: number }>} */
 const memoryRows = new Map()
+/** @type {Map<string, { deckId: string, voterId: string, body: string, updatedAt: string }>} */
+const memoryTips = new Map()
 const memKey = (deckId, voterId) => `${deckId}\0${voterId}`
+
+const TIP_MAX_LEN = 60
+const TIP_LIST_LIMIT = 30
 
 const pool = USE_MEMORY
   ? null
@@ -50,7 +55,122 @@ async function ensureSchema() {
       PRIMARY KEY (deck_id, voter_id)
     );
     CREATE INDEX IF NOT EXISTS deck_ratings_deck_id_idx ON deck_ratings (deck_id);
+
+    CREATE TABLE IF NOT EXISTS deck_tips (
+      deck_id TEXT NOT NULL,
+      voter_id TEXT NOT NULL,
+      body TEXT NOT NULL CHECK (char_length(body) >= 1 AND char_length(body) <= ${TIP_MAX_LEN}),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (deck_id, voter_id)
+    );
+    CREATE INDEX IF NOT EXISTS deck_tips_deck_updated_idx ON deck_tips (deck_id, updated_at DESC);
   `)
+}
+
+function normalizeTipBody(raw) {
+  if (typeof raw !== 'string') return null
+  const body = raw.replace(/\s+/g, ' ').trim()
+  if (!body || body.length > TIP_MAX_LEN) return null
+  return body
+}
+
+function publicTip(row, voterId) {
+  return {
+    body: row.body,
+    updatedAt: row.updatedAt,
+    mine: Boolean(voterId && row.voterId === voterId),
+  }
+}
+
+async function listTips(deckId, voterId) {
+  if (USE_MEMORY) {
+    const rows = [...memoryTips.values()]
+      .filter((r) => r.deckId === deckId)
+      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+    const mine = voterId ? rows.find((r) => r.voterId === voterId) : null
+    const others = rows.filter((r) => !voterId || r.voterId !== voterId).slice(0, TIP_LIST_LIMIT)
+    const ordered = mine ? [mine, ...others.filter((r) => r !== mine)] : others
+    return {
+      tips: ordered.slice(0, TIP_LIST_LIMIT).map((r) => publicTip(r, voterId)),
+      count: rows.length,
+      myTip: mine ? mine.body : null,
+    }
+  }
+
+  const countRes = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM deck_tips WHERE deck_id = $1`,
+    [deckId],
+  )
+  const count = Number(countRes.rows[0]?.count || 0)
+
+  let myTip = null
+  if (voterId) {
+    const mine = await pool.query(
+      `SELECT body FROM deck_tips WHERE deck_id = $1 AND voter_id = $2`,
+      [deckId, voterId],
+    )
+    if (mine.rows[0]) myTip = String(mine.rows[0].body)
+  }
+
+  const list = await pool.query(
+    `
+      SELECT body, voter_id, updated_at
+      FROM deck_tips
+      WHERE deck_id = $1
+      ORDER BY
+        CASE WHEN voter_id = $2 THEN 0 ELSE 1 END,
+        updated_at DESC
+      LIMIT $3
+    `,
+    [deckId, voterId || '', TIP_LIST_LIMIT],
+  )
+
+  return {
+    tips: list.rows.map((row) =>
+      publicTip(
+        {
+          body: String(row.body),
+          voterId: String(row.voter_id),
+          updatedAt: new Date(row.updated_at).toISOString(),
+        },
+        voterId,
+      ),
+    ),
+    count,
+    myTip,
+  }
+}
+
+async function upsertTip(deckId, voterId, body) {
+  if (USE_MEMORY) {
+    const key = memKey(deckId, voterId)
+    if (body == null) memoryTips.delete(key)
+    else {
+      memoryTips.set(key, {
+        deckId,
+        voterId,
+        body,
+        updatedAt: new Date().toISOString(),
+      })
+    }
+    return
+  }
+  if (body == null) {
+    await pool.query(`DELETE FROM deck_tips WHERE deck_id = $1 AND voter_id = $2`, [
+      deckId,
+      voterId,
+    ])
+    return
+  }
+  await pool.query(
+    `
+      INSERT INTO deck_tips (deck_id, voter_id, body, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (deck_id, voter_id)
+      DO UPDATE SET body = EXCLUDED.body, updated_at = NOW()
+    `,
+    [deckId, voterId, body],
+  )
 }
 
 function normalizeScore(raw) {
@@ -177,7 +297,7 @@ app.get('/', (_req, res) => {
     .send(
       '<!doctype html><meta charset="utf-8" /><title>SamDeck API</title>' +
         '<body style="font-family:sans-serif;background:#111;color:#eee;padding:2rem">' +
-        '<p>SamDeck 평점 API입니다.</p>' +
+        '<p>SamDeck 평점·팁 API입니다.</p>' +
         '<p>사이트: <a href="https://samdeck.xyz" style="color:#e0c56a">https://samdeck.xyz</a></p>' +
         '<p>헬스: <a href="/health" style="color:#e0c56a">/health</a></p>' +
         '</body>',
@@ -223,6 +343,48 @@ app.put('/ratings/:deckId', async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'failed_to_save_rating' })
+  }
+})
+
+app.get('/tips/:deckId', async (req, res) => {
+  try {
+    const deckId = String(req.params.deckId || '').trim()
+    if (!deckId || deckId.length > 120) {
+      return res.status(400).json({ error: 'invalid_deck_id' })
+    }
+    const voterId = voterIdFrom(req)
+    const data = await listTips(deckId, voterId)
+    res.json(data)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'failed_to_fetch_tips' })
+  }
+})
+
+app.put('/tips/:deckId', async (req, res) => {
+  try {
+    const deckId = String(req.params.deckId || '').trim()
+    const voterId = voterIdFrom(req)
+    if (!deckId || deckId.length > 120) {
+      return res.status(400).json({ error: 'invalid_deck_id' })
+    }
+    if (!voterId) {
+      return res.status(400).json({ error: 'missing_voter_id' })
+    }
+
+    const raw = req.body?.text ?? req.body?.body
+    const clear = raw == null || (typeof raw === 'string' && raw.trim() === '')
+    const body = clear ? null : normalizeTipBody(raw)
+    if (!clear && body == null) {
+      return res.status(400).json({ error: 'invalid_tip', maxLength: TIP_MAX_LEN })
+    }
+
+    await upsertTip(deckId, voterId, body)
+    const data = await listTips(deckId, voterId)
+    res.json(data)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'failed_to_save_tip' })
   }
 })
 
