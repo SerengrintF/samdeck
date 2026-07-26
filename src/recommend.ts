@@ -84,6 +84,8 @@ function buildMember(
     doctrineNames: member.doctrines.map((id) => nameOf(id) || id),
     troopType: member.troopType,
     troopSpecs: member.troopSpecs ? [...member.troopSpecs] : undefined,
+    attrEquip: member.attrEquip,
+    attrMain: member.attrMain,
   }
 }
 

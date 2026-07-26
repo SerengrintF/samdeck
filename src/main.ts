@@ -5,6 +5,7 @@ import { doctrines } from './data/doctrines'
 import { getSeasonCatalog } from './data/seasonCatalog'
 import { portraitSrc } from './data/portraits'
 import { displaySkillName } from './data/normalize'
+import { formatAttrChips } from './data/zhKoAttrs'
 import { skillTier } from './data/skillTiers'
 import { SEASONS, getSeasonMeta } from './data/seasons'
 import { findDeckSets } from './recommend'
@@ -503,6 +504,8 @@ function deckToDisplayMatch(deck: Deck): DeckMatch {
       doctrineNames: m.doctrines.map((id) => skillName(id) || id),
       troopType: m.troopType,
       troopSpecs: m.troopSpecs ? [...m.troopSpecs] : undefined,
+      attrEquip: m.attrEquip,
+      attrMain: m.attrMain,
     } satisfies MemberBuild
   }) as [MemberBuild, MemberBuild, MemberBuild]
 
@@ -553,8 +556,21 @@ function renderMemberCol(m: DeckMatch['members'][0], def?: Deck['members'][0]): 
   const doctrineList = m.doctrineNames.filter(Boolean)
   const troopType = m.troopType ?? def?.troopType
   const troopSpecs = m.troopSpecs ?? def?.troopSpecs
+  const attrEquip = m.attrEquip ?? def?.attrEquip
+  const attrMain = m.attrMain ?? def?.attrMain
   const altIds = def ? memberAltSkillIds(def) : []
   const altNames = altIds.map((id) => skillName(id)).filter(Boolean)
+  const attrChips = formatAttrChips(attrEquip, attrMain)
+  const attrHtml = attrChips.length
+    ? `<div class="member-card__attr" aria-label="장비·가점">
+        ${attrChips
+          .map(
+            (c) =>
+              `<span class="troop-chip troop-chip--attr"><span class="troop-chip__kind">${c.kind}</span>${c.text}</span>`,
+          )
+          .join('')}
+      </div>`
+    : ''
   const troopHtml =
     troopType || (troopSpecs && troopSpecs.length)
       ? `<div class="member-card__troop" aria-label="병종">
@@ -575,6 +591,7 @@ function renderMemberCol(m: DeckMatch['members'][0], def?: Deck['members'][0]): 
       </div>
       <div class="member-card__info">
         <h4 class="member-card__name">${m.generalName}</h4>
+        ${attrHtml}
         ${troopHtml}
         <ul class="member-card__skills" aria-label="전법">
           ${renderSkillChip(m.slots[0])}

@@ -2555,6 +2555,28 @@ html.modal-open body {
   color: #a8c9ae;
 }
 
+.troop-chip--attr {
+  background: rgba(160, 120, 70, 0.14);
+  border: 1px solid rgba(180, 140, 80, 0.32);
+  color: #d4b88a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.troop-chip__kind {
+  font-size: 0.65rem;
+  opacity: 0.75;
+  letter-spacing: -0.02em;
+}
+
+.member-card__attr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 4px;
+}
+
 .member-card__skills {
   list-style: none;
   margin: 0;

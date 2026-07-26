@@ -1,9 +1,25 @@
 import type { Deck, DeckMember, Doctrine, Faction, General, SeasonId, Skill } from '../types'
-import { normList, normName, normTroopSpecs, normTroopType } from './normalize'
+import {
+  normAttrEquip,
+  normAttrMain,
+  normList,
+  normName,
+  normTroopSpecs,
+  normTroopType,
+} from './normalize'
 import { skillTier } from './skillTiers'
 
-/** mem() 6번째 인자 — 병종만 문자열, 또는 병종+특화 객체 */
-export type TroopInput = string | { type: string; specs?: string[] }
+/** mem() 6번째 인자 — 병종 문자열, 또는 병종·특화·장비·가점 객체 */
+export type TroopInput =
+  | string
+  | {
+      type?: string
+      specs?: string[]
+      /** 장비 성향 (智统→지통 등) */
+      equip?: string
+      /** 가점 (先攻→선공 등) */
+      main?: string
+    }
 
 /** 표 한 명의 장수 행 → DeckMember (대체 전법은 두 슬롯 공유 풀) */
 export function mem(
@@ -16,14 +32,11 @@ export function mem(
 ): DeckMember {
   const pool = normList(alts)
   const d = doctrines.map(normName) as [string, string, string]
-  const troopType =
-    troop == null
-      ? undefined
-      : normTroopType(typeof troop === 'string' ? troop : troop.type) || undefined
-  const troopSpecs =
-    troop && typeof troop !== 'string' && troop.specs?.length
-      ? normTroopSpecs(troop.specs)
-      : undefined
+  const extra = troop == null ? null : typeof troop === 'string' ? { type: troop } : troop
+  const troopType = extra?.type ? normTroopType(extra.type) || undefined : undefined
+  const troopSpecs = extra?.specs?.length ? normTroopSpecs(extra.specs) : undefined
+  const attrEquip = extra?.equip ? normAttrEquip(extra.equip) || undefined : undefined
+  const attrMain = extra?.main ? normAttrMain(extra.main) || undefined : undefined
   return {
     generalId,
     slots: [
@@ -33,6 +46,8 @@ export function mem(
     doctrines: d,
     ...(troopType ? { troopType } : {}),
     ...(troopSpecs && troopSpecs.length ? { troopSpecs } : {}),
+    ...(attrEquip ? { attrEquip } : {}),
+    ...(attrMain ? { attrMain } : {}),
   }
 }
 

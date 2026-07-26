@@ -237,6 +237,8 @@ function assignComboSkills(
       doctrineNames: def.doctrines.map((id) => nameOf(id) || id),
       troopType: def.troopType,
       troopSpecs: def.troopSpecs ? [...def.troopSpecs] : undefined,
+      attrEquip: def.attrEquip,
+      attrMain: def.attrMain,
     })
   }
 
@@ -493,6 +495,8 @@ export function tryFitAgainstUsed(
       doctrineNames: member.doctrines.map((id) => nameOf(id) || id),
       troopType: member.troopType,
       troopSpecs: member.troopSpecs ? [...member.troopSpecs] : undefined,
+      attrEquip: member.attrEquip,
+      attrMain: member.attrMain,
     })
   }
 

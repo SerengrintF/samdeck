@@ -47,6 +47,10 @@ export interface DeckMember {
   troopType?: string
   /** 병종 특화 — S2+ (예: 철마금과). 복수 가능 */
   troopSpecs?: string[]
+  /** 장비 성향 (예: 지통, 무선). 가이드 「智统 | 速」 왼쪽 */
+  attrEquip?: string
+  /** 가점 (예: 지력, 선공). 가이드 「智统 | 速」 오른쪽 */
+  attrMain?: string
 }
 
 export interface Deck {
@@ -86,6 +90,8 @@ export interface MemberBuild {
   doctrineNames: string[]
   troopType?: string
   troopSpecs?: string[]
+  attrEquip?: string
+  attrMain?: string
 }
 
 export interface DeckMatch {

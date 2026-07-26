@@ -106,7 +106,9 @@ function renderGuide(): string {
         복수 표기가 있으면 둘 중 하나를 상황에 맞게 고르면 됩니다.
       </p>
       <p>
-        <strong>시즌 2부터</strong>는 장수별 <strong>병종</strong>(장창병·중기병 등)과
+        <strong>시즌 2부터</strong>는 장수별 <strong>장비</strong>(지력·통솔 등),
+        <strong>가점</strong>(지력·선공 등),
+        <strong>병종</strong>(장창병·중기병 등),
         <strong>병종 특화</strong>(철마금과·억연부동 등)가 카드에 함께 표시될 수 있습니다.
         가이드에 없는 덱은 비워 둘 수 있습니다.
       </p>

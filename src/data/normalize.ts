@@ -1,5 +1,6 @@
 import { zhSkillToKo } from './zhKoSkills'
 import { zhDoctrineToKo } from './zhKoDoctrines'
+import { zhAttrEquipToKo, zhAttrMainToKo } from './zhKoAttrs'
 import { zhTroopSpecToKo, zhTroopTypeToKo } from './zhKoTroops'
 
 /**
@@ -84,6 +85,8 @@ const ALIASES: Record<string, string> = {
   '천하 평론': '천하평론',
   '속수 무책': '속수무책',
   '기문 둔갑': '기문둔갑',
+  동주공제: '일심협력',
+  철벽성채: '금성의 철벽',
 }
 
 const CJK = /[\u4e00-\u9fff]/
@@ -93,9 +96,16 @@ const VERIFIED_DESPITE_CJK_ALIAS = new Set(['대모'])
 
 /** 중국어에서 옮긴 뒤에도 표기가 확정되지 않은 전법 — UI에 (확인중) */
 export const UNVERIFIED_SKILL_NAMES = new Set(
-  ['합취군웅', '궤도현기', '임인유현', '절절학문', '종마횡창', '궁추불사'].filter(
-    (to) => !VERIFIED_DESPITE_CJK_ALIAS.has(to),
-  ),
+  [
+    '합취군웅',
+    '궤도현기',
+    '임인유현',
+    '절절학문',
+    '종마횡창',
+    '궁추불사',
+    '불굴의 의지',
+    '화소연영',
+  ].filter((to) => !VERIFIED_DESPITE_CJK_ALIAS.has(to)),
 )
 
 export function displaySkillName(name: string): string {
@@ -150,4 +160,18 @@ export function normTroopSpecs(items: string[]): string[] {
     out.push(n)
   }
   return out
+}
+
+/** 장비 성향 정규화 */
+export function normAttrEquip(raw: string): string {
+  const t = raw.trim().replace(/\s+/g, '')
+  if (!t || t === '없음') return ''
+  return zhAttrEquipToKo(t) ?? applyKoAlias(t) ?? t
+}
+
+/** 가점 정규화 */
+export function normAttrMain(raw: string): string {
+  const t = raw.trim().replace(/\s+/g, '')
+  if (!t || t === '없음') return ''
+  return zhAttrMainToKo(t) ?? applyKoAlias(t) ?? t
 }
