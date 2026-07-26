@@ -66,6 +66,34 @@ function parseTipsPayload(raw: unknown): DeckTipsPayload | null {
   return { tips, count, myTip }
 }
 
+export async function fetchDeckTipCounts(
+  deckIds: string[],
+): Promise<Record<string, number> | null> {
+  const base = ratingsApiBase()
+  if (!base) return null
+  const ids = [...new Set(deckIds.filter(Boolean))].slice(0, 200)
+  if (ids.length === 0) return {}
+  try {
+    const url = `${base}/tips?deckIds=${encodeURIComponent(ids.join(','))}`
+    const res = await fetch(url, {
+      headers: { 'X-Voter-Id': getVoterId() },
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { counts?: Record<string, unknown> }
+    const out: Record<string, number> = {}
+    for (const id of ids) out[id] = 0
+    if (data.counts && typeof data.counts === 'object') {
+      for (const [id, raw] of Object.entries(data.counts)) {
+        const n = typeof raw === 'number' ? raw : Number(raw)
+        if (Number.isFinite(n) && n > 0) out[id] = Math.floor(n)
+      }
+    }
+    return out
+  } catch {
+    return null
+  }
+}
+
 export async function fetchDeckTips(deckId: string): Promise<DeckTipsPayload | null> {
   const base = ratingsApiBase()
   if (!base || !deckId) return null

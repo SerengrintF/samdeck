@@ -25,6 +25,7 @@ import {
 import {
   TIP_MAX_LEN,
   TIP_PREVIEW,
+  fetchDeckTipCounts,
   fetchDeckTips,
   isTipsApiConfigured,
   pickTipHint,
@@ -108,6 +109,8 @@ const state = {
   deckRatings: loadDeckRatings() as Record<string, RatingValue>,
   /** 서버 평균·건수·내 점수 (API 연동 시) */
   ratingStats: {} as Record<string, DeckRatingStat>,
+  /** 덱별 조합 팁 개수 */
+  tipCounts: {} as Record<string, number>,
   myCombos: loadMyCombos(initialSeason),
   comboCheck: null as ComboCheckResult | null,
   comboReplacements: [] as ReplacementSuggestion[],
@@ -810,6 +813,58 @@ function renderDeckCard(
   `
 }
 
+function tipCount(deckId: string): number {
+  return state.tipCounts[deckId] ?? 0
+}
+
+function renderTipBadge(deckId: string): string {
+  const n = tipCount(deckId)
+  if (n <= 0) {
+    return `<span class="combo-card__tips is-empty" data-list-tips="${deckId}" hidden aria-hidden="true"></span>`
+  }
+  const label = n > 99 ? '99+' : String(n)
+  return `
+    <span
+      class="combo-card__tips"
+      data-list-tips="${deckId}"
+      title="조합 팁 ${label}개"
+      aria-label="조합 팁 ${label}개"
+    >
+      <svg class="combo-card__tips-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+        <path fill="currentColor" d="M2.5 2.5h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H8.2L5 14.2V11.5H2.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Zm1 1.5v6h2v1.8l1.8-1.8H12.5v-6h-9Z"/>
+      </svg>
+      <span class="combo-card__tips-count">${label}</span>
+    </span>
+  `
+}
+
+function updateTipCountDisplay(deckId: string): void {
+  document.querySelectorAll(`[data-list-tips="${CSS.escape(deckId)}"]`).forEach((el) => {
+    const n = tipCount(deckId)
+    if (n <= 0) {
+      el.classList.add('is-empty')
+      el.setAttribute('hidden', '')
+      el.setAttribute('aria-hidden', 'true')
+      el.removeAttribute('title')
+      el.removeAttribute('aria-label')
+      el.innerHTML = ''
+      return
+    }
+    const label = n > 99 ? '99+' : String(n)
+    el.classList.remove('is-empty')
+    el.removeAttribute('hidden')
+    el.removeAttribute('aria-hidden')
+    el.setAttribute('title', `조합 팁 ${label}개`)
+    el.setAttribute('aria-label', `조합 팁 ${label}개`)
+    el.innerHTML = `
+      <svg class="combo-card__tips-icon" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+        <path fill="currentColor" d="M2.5 2.5h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H8.2L5 14.2V11.5H2.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Zm1 1.5v6h2v1.8l1.8-1.8H12.5v-6h-9Z"/>
+      </svg>
+      <span class="combo-card__tips-count">${label}</span>
+    `
+  })
+}
+
 function renderComboCard(deck: Deck, opts?: { rank?: number }): string {
   const match = deckToDisplayMatch(deck)
   const formation = deck.formation?.trim()
@@ -828,6 +883,7 @@ function renderComboCard(deck: Deck, opts?: { rank?: number }): string {
           ${rankHtml}
           <span class="tier-badge tier-${deck.tier}">${deck.tier}티어</span>
           ${formation ? `<span class="formation-badge">${formation}</span>` : ''}
+          ${renderTipBadge(deck.id)}
         </div>
         <div class="combo-card__members">
           ${match.members
@@ -980,14 +1036,25 @@ async function hydrateSeasonRatings(): Promise<void> {
   const ids = seasonDecks().map((d) => d.id)
   if (ids.length === 0) return
   if (!isRatingsApiConfigured()) return
-  const stats = await fetchDeckRatings(ids)
-  if (!stats) return
-  for (const [id, stat] of Object.entries(stats)) {
-    state.ratingStats[id] = stat
-    if (stat.myRating != null) state.deckRatings[id] = stat.myRating
+
+  const [stats, tipCounts] = await Promise.all([
+    fetchDeckRatings(ids),
+    fetchDeckTipCounts(ids),
+  ])
+
+  if (stats) {
+    for (const [id, stat] of Object.entries(stats)) {
+      state.ratingStats[id] = stat
+      if (stat.myRating != null) state.deckRatings[id] = stat.myRating
+    }
+    saveDeckRatings(state.deckRatings)
+    for (const id of Object.keys(stats)) updateRatingDisplay(id)
   }
-  saveDeckRatings(state.deckRatings)
-  for (const id of Object.keys(stats)) updateRatingDisplay(id)
+
+  if (tipCounts) {
+    state.tipCounts = { ...state.tipCounts, ...tipCounts }
+    for (const id of Object.keys(tipCounts)) updateTipCountDisplay(id)
+  }
 
   const intro = document.querySelector('.catalog-intro')
   if (intro) {
@@ -1127,6 +1194,8 @@ function renderDeckTipsSection(deckId: string, data?: DeckTipsPayload | null, ex
 }
 
 function paintDeckTips(deckId: string, data: DeckTipsPayload, expanded = false): void {
+  state.tipCounts[deckId] = data.count
+  updateTipCountDisplay(deckId)
   const root = document.querySelector<HTMLElement>(`[data-deck-tips="${CSS.escape(deckId)}"]`)
   if (!root) return
   const wrap = document.createElement('div')

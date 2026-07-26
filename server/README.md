@@ -48,6 +48,7 @@ npm run smoke
 - `GET /ratings?deckIds=id1,id2` + 헤더 `X-Voter-Id`
 - `PUT /ratings/:deckId` body `{ "score": 4 }` 또는 `{ "score": null }` + `X-Voter-Id`  
   (점수는 **1~5 정수**)
+- `GET /tips?deckIds=id1,id2` — 덱별 팁 개수 `{ counts: { id: n } }`
 - `GET /tips/:deckId` + 헤더 `X-Voter-Id` — 조합 팁 목록·내 팁
 - `PUT /tips/:deckId` body `{ "text": "한 줄 팁" }` 또는 `{ "text": null }` + `X-Voter-Id`  
   (최대 60자, voter당 덱 1개)

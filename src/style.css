@@ -445,6 +445,36 @@ body::before {
   gap: 6px;
 }
 
+.combo-card__tips {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  background: rgba(201, 162, 39, 0.12);
+  color: var(--gold-soft);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.combo-card__tips.is-empty {
+  display: none;
+}
+
+.combo-card__tips-icon {
+  flex: 0 0 auto;
+  opacity: 0.95;
+}
+
+.combo-card__tips-count {
+  font-variant-numeric: tabular-nums;
+}
+
 .combo-card__members {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

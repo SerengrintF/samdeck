@@ -141,6 +141,35 @@ async function listTips(deckId, voterId) {
   }
 }
 
+async function tipCountsForDecks(deckIds) {
+  /** @type {Record<string, number>} */
+  const out = {}
+  for (const id of deckIds) out[id] = 0
+  if (deckIds.length === 0) return out
+
+  if (USE_MEMORY) {
+    for (const row of memoryTips.values()) {
+      if (!deckIds.includes(row.deckId)) continue
+      out[row.deckId] = (out[row.deckId] || 0) + 1
+    }
+    return out
+  }
+
+  const agg = await pool.query(
+    `
+      SELECT deck_id, COUNT(*)::int AS count
+      FROM deck_tips
+      WHERE deck_id = ANY($1::text[])
+      GROUP BY deck_id
+    `,
+    [deckIds],
+  )
+  for (const row of agg.rows) {
+    out[row.deck_id] = Number(row.count)
+  }
+  return out
+}
+
 async function upsertTip(deckId, voterId, body) {
   if (USE_MEMORY) {
     const key = memKey(deckId, voterId)
@@ -343,6 +372,18 @@ app.put('/ratings/:deckId', async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'failed_to_save_rating' })
+  }
+})
+
+app.get('/tips', async (req, res) => {
+  try {
+    const raw = String(req.query.deckIds || '')
+    const deckIds = [...new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))].slice(0, 200)
+    const counts = await tipCountsForDecks(deckIds)
+    res.json({ counts })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'failed_to_fetch_tip_counts' })
   }
 })
 
