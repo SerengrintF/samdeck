@@ -1,6 +1,9 @@
 import type { Deck, DeckMember, Doctrine, Faction, General, SeasonId, Skill } from '../types'
-import { normList, normName } from './normalize'
+import { normList, normName, normTroopSpecs, normTroopType } from './normalize'
 import { skillTier } from './skillTiers'
+
+/** mem() 6번째 인자 — 병종만 문자열, 또는 병종+특화 객체 */
+export type TroopInput = string | { type: string; specs?: string[] }
 
 /** 표 한 명의 장수 행 → DeckMember (대체 전법은 두 슬롯 공유 풀) */
 export function mem(
@@ -9,9 +12,18 @@ export function mem(
   req2: string,
   alts: string[],
   doctrines: [string, string, string],
+  troop?: TroopInput,
 ): DeckMember {
   const pool = normList(alts)
   const d = doctrines.map(normName) as [string, string, string]
+  const troopType =
+    troop == null
+      ? undefined
+      : normTroopType(typeof troop === 'string' ? troop : troop.type) || undefined
+  const troopSpecs =
+    troop && typeof troop !== 'string' && troop.specs?.length
+      ? normTroopSpecs(troop.specs)
+      : undefined
   return {
     generalId,
     slots: [
@@ -19,6 +31,8 @@ export function mem(
       { required: [normName(req2)], alternatives: pool },
     ],
     doctrines: d,
+    ...(troopType ? { troopType } : {}),
+    ...(troopSpecs && troopSpecs.length ? { troopSpecs } : {}),
   }
 }
 

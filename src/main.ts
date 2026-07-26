@@ -77,6 +77,7 @@ type AppPage = 'recommend' | 'roster' | 'mine'
 type NavPage = AppPage | InfoPage
 const APP_PAGES: AppPage[] = ['recommend', 'roster', 'mine']
 type RosterTab = 'generals' | 'skills'
+type RecommendTab = 'tier' | 'coexist'
 /** browse = 메뉴 페이지, set-result = 장수 조합의 세트 추천 결과 */
 type AppView = 'browse' | 'set-result'
 
@@ -94,6 +95,7 @@ const state = {
   view: 'browse' as AppView,
   page: 'recommend' as NavPage,
   tab: 'generals' as RosterTab,
+  recommendTab: 'tier' as RecommendTab,
   season: initialSeason,
   ownedGenerals: loadOwnedGenerals(initialSeason),
   ownedSkills: loadOwnedSkills(initialSeason),
@@ -106,6 +108,8 @@ const state = {
   openSetId: null as string | null,
   detailDeckId: null as string | null,
   tierExpanded: { 1: false, 2: false, 3: false } as Record<1 | 2 | 3, boolean>,
+  /** 공존 세트 「모두 보기」 펼침 */
+  coexistExpanded: {} as Record<string, boolean>,
   deckRatings: loadDeckRatings() as Record<string, RatingValue>,
   /** 서버 평균·건수·내 점수 (API 연동 시) */
   ratingStats: {} as Record<string, DeckRatingStat>,
@@ -134,6 +138,21 @@ function catalog() {
 
 function seasonDecks() {
   return catalog().decks
+}
+
+function seasonCoexistDecks() {
+  return catalog().coexistDecks
+}
+
+function seasonCoexistPacks() {
+  return catalog().coexistPacks
+}
+
+function findSeasonDeck(deckId: string) {
+  return (
+    seasonDecks().find((d) => d.id === deckId) ??
+    seasonCoexistDecks().find((d) => d.id === deckId)
+  )
 }
 
 function seasonGenerals(): General[] {
@@ -166,6 +185,7 @@ function setSeason(id: SeasonId): void {
   state.trackSkills = loadTrackSkills(id)
   state.myCombos = loadMyCombos(id)
   state.tierExpanded = { 1: false, 2: false, 3: false }
+  state.coexistExpanded = {}
   state.sets = []
   state.readyDeckCount = 0
   state.packSize = 0
@@ -373,6 +393,17 @@ function switchTab(tab: RosterTab): void {
   render()
 }
 
+function switchRecommendTab(tab: RecommendTab): void {
+  if (state.recommendTab === tab && state.page === 'recommend' && state.view === 'browse') return
+  state.view = 'browse'
+  state.page = 'recommend'
+  state.recommendTab = tab
+  state.query = ''
+  scrollToTopInstant()
+  render()
+  scrollToTopInstant()
+}
+
 function bindPanelEvents(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-kind="general"]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -470,6 +501,8 @@ function deckToDisplayMatch(deck: Deck): DeckMatch {
       slots,
       doctrines: [...m.doctrines],
       doctrineNames: m.doctrines.map((id) => skillName(id) || id),
+      troopType: m.troopType,
+      troopSpecs: m.troopSpecs ? [...m.troopSpecs] : undefined,
     } satisfies MemberBuild
   }) as [MemberBuild, MemberBuild, MemberBuild]
 
@@ -518,8 +551,19 @@ function memberAltSkillIds(def: Deck['members'][0]): string[] {
 function renderMemberCol(m: DeckMatch['members'][0], def?: Deck['members'][0]): string {
   const src = portraitSrc(m.generalId)
   const doctrineList = m.doctrineNames.filter(Boolean)
+  const troopType = m.troopType ?? def?.troopType
+  const troopSpecs = m.troopSpecs ?? def?.troopSpecs
   const altIds = def ? memberAltSkillIds(def) : []
   const altNames = altIds.map((id) => skillName(id)).filter(Boolean)
+  const troopHtml =
+    troopType || (troopSpecs && troopSpecs.length)
+      ? `<div class="member-card__troop" aria-label="병종">
+          ${troopType ? `<span class="troop-chip troop-chip--type">${troopType}</span>` : ''}
+          ${(troopSpecs ?? [])
+            .map((s) => `<span class="troop-chip troop-chip--spec">${s}</span>`)
+            .join('')}
+        </div>`
+      : ''
   return `
     <article class="member-card">
       <div class="member-card__portrait">
@@ -531,6 +575,7 @@ function renderMemberCol(m: DeckMatch['members'][0], def?: Deck['members'][0]): 
       </div>
       <div class="member-card__info">
         <h4 class="member-card__name">${m.generalName}</h4>
+        ${troopHtml}
         <ul class="member-card__skills" aria-label="전법">
           ${renderSkillChip(m.slots[0])}
           ${renderSkillChip(m.slots[1])}
@@ -586,7 +631,7 @@ function findMatchForSave(deckId: string): DeckMatch | null {
     const hit = set.decks.find((d) => d.deck.id === deckId)
     if (hit) return hit
   }
-  const deck = seasonDecks().find((d) => d.id === deckId)
+  const deck = findSeasonDeck(deckId)
   if (deck) return deckToDisplayMatch(deck)
   const saved = state.myCombos.find((c) => c.deckId === deckId)
   return saved ? savedToMatch(saved) : null
@@ -1033,7 +1078,7 @@ async function setDeckRating(deckId: string, picked: number): Promise<void> {
 }
 
 async function hydrateSeasonRatings(): Promise<void> {
-  const ids = seasonDecks().map((d) => d.id)
+  const ids = [...seasonDecks(), ...seasonCoexistDecks()].map((d) => d.id)
   if (ids.length === 0) return
   if (!isRatingsApiConfigured()) return
 
@@ -1057,8 +1102,8 @@ async function hydrateSeasonRatings(): Promise<void> {
   }
 
   const intro = document.querySelector('.catalog-intro')
-  if (intro) {
-    intro.outerHTML = renderCatalogIntro(state.page === 'recommend')
+  if (intro && state.page === 'recommend' && state.recommendTab === 'tier') {
+    intro.outerHTML = renderCatalogIntro(true)
     bindTopRatedStrip()
   }
 }
@@ -1288,7 +1333,7 @@ async function hydrateDeckTips(deckId: string): Promise<void> {
 }
 
 function openDeckModal(deckId: string): void {
-  const deck = seasonDecks().find((d) => d.id === deckId)
+  const deck = findSeasonDeck(deckId)
   if (!deck) return
   const existing = document.getElementById('deck-modal')
   if (existing) {
@@ -1490,9 +1535,42 @@ function renderShellChrome(): string {
       : APP_PAGES.includes(state.page as AppPage)
         ? (state.page as AppPage)
         : null
-  const showSub = navActive === 'roster'
+  const showRecommendSub = navActive === 'recommend'
+  const showRosterSub = navActive === 'roster'
+  const showSub = showRecommendSub || showRosterSub
   const seasonMeta = getSeasonMeta(state.season)
-  const showCatalogIntro = state.view === 'browse' && state.page === 'recommend'
+  const showCatalogIntro =
+    state.view === 'browse' && state.page === 'recommend' && state.recommendTab === 'tier'
+
+  const recommendSub = `
+        <button
+          type="button"
+          class="global-nav__sub-btn ${state.recommendTab === 'tier' ? 'is-active' : ''}"
+          data-recommend-tab="tier"
+          tabindex="${showRecommendSub ? 0 : -1}"
+        >티어덱</button>
+        <button
+          type="button"
+          class="global-nav__sub-btn ${state.recommendTab === 'coexist' ? 'is-active' : ''}"
+          data-recommend-tab="coexist"
+          tabindex="${showRecommendSub ? 0 : -1}"
+        >공존덱</button>
+  `
+
+  const rosterSub = `
+        <button
+          type="button"
+          class="global-nav__sub-btn ${state.view === 'browse' && state.tab === 'generals' ? 'is-active' : ''}"
+          data-tab="generals"
+          tabindex="${showRosterSub ? 0 : -1}"
+        >보유 장수</button>
+        <button
+          type="button"
+          class="global-nav__sub-btn ${state.view === 'browse' && state.tab === 'skills' ? 'is-active' : ''}"
+          data-tab="skills"
+          tabindex="${showRosterSub ? 0 : -1}"
+        >보유 전법</button>
+  `
 
   return `
     <div class="top-bar">
@@ -1579,21 +1657,10 @@ function renderShellChrome(): string {
       <div
         class="global-nav__sub ${showSub ? '' : 'is-hidden'}"
         role="tablist"
-        aria-label="장수 조합 하위"
+        aria-label="${showRecommendSub ? '조합 추천 하위' : '장수 조합 하위'}"
         aria-hidden="${showSub ? 'false' : 'true'}"
       >
-        <button
-          type="button"
-          class="global-nav__sub-btn ${showSub && state.view === 'browse' && state.tab === 'generals' ? 'is-active' : ''}"
-          data-tab="generals"
-          tabindex="${showSub ? 0 : -1}"
-        >보유 장수</button>
-        <button
-          type="button"
-          class="global-nav__sub-btn ${showSub && state.view === 'browse' && state.tab === 'skills' ? 'is-active' : ''}"
-          data-tab="skills"
-          tabindex="${showSub ? 0 : -1}"
-        >보유 전법</button>
+        ${showRecommendSub ? recommendSub : rosterSub}
       </div>
     </nav>
     ${showCatalogIntro ? renderCatalogIntro(true) : ''}
@@ -1627,8 +1694,7 @@ function renderCatalogIntro(showTopRated = false): string {
   return `
     <section class="catalog-intro" aria-label="조합 안내">
       <p class="catalog-intro__note">
-        본 조합은 중국 커뮤니티·가이드 자료를 참고해 정리한 <strong>참고용</strong>입니다.
-        공식 티어·승률을 보장하지 않으니, 편성 시 참고만 부탁드려요.
+        중국 가이드 참고·번역 확인 중입니다. 공식 티어·승률을 보장하지 않으니 <strong>참고만</strong> 해주세요.
       </p>
       ${
         showTopRated
@@ -1651,25 +1717,7 @@ function renderCatalogIntro(showTopRated = false): string {
   `
 }
 
-function bindTopRatedStrip(): void {
-  const intro = document.querySelector<HTMLElement>('.catalog-intro')
-  if (!intro) return
-
-  // 교체 렌더 후에도 한 번만 위임 (outerHTML 교체 시 새 노드이므로 재바인딩)
-  intro.addEventListener('click', (e) => {
-    const t = e.target as HTMLElement
-    if (t.closest('[data-save-combo]')) return
-    const deckBtn = t.closest<HTMLElement>('[data-deck-id]')
-    if (!deckBtn || !intro.contains(deckBtn)) return
-    const id = deckBtn.dataset.deckId
-    if (id) openDeckModal(id)
-  })
-  bindSaveComboButtons(intro)
-
-  const scroller = intro.querySelector<HTMLElement>('[data-top-rated-scroll]')
-  if (!scroller) return
-
-  // 장수 이미지 네이티브 드래그가 가로 스크롤을 가로채지 않게
+function bindHorizontalScroller(scroller: HTMLElement): void {
   scroller.addEventListener('dragstart', (e) => e.preventDefault())
 
   let active = false
@@ -1680,7 +1728,6 @@ function bindTopRatedStrip(): void {
 
   scroller.addEventListener('pointerdown', (e) => {
     if ((e.target as HTMLElement | null)?.closest('button.save-combo-btn')) return
-    // 터치는 네이티브 pan-x 스크롤에 맡김
     if (e.pointerType === 'touch') return
     active = true
     dragging = false
@@ -1737,12 +1784,107 @@ function bindTopRatedStrip(): void {
   )
 }
 
+function bindTopRatedStrip(): void {
+  const intro = document.querySelector<HTMLElement>('.catalog-intro')
+  if (!intro) return
+
+  intro.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement
+    if (t.closest('[data-save-combo]')) return
+    const deckBtn = t.closest<HTMLElement>('[data-deck-id]')
+    if (!deckBtn || !intro.contains(deckBtn)) return
+    const id = deckBtn.dataset.deckId
+    if (id) openDeckModal(id)
+  })
+  bindSaveComboButtons(intro)
+
+  const scroller = intro.querySelector<HTMLElement>('[data-top-rated-scroll]')
+  if (scroller) bindHorizontalScroller(scroller)
+}
+
 function renderPageFooter(): string {
   const infoActive = isInfoPage(state.page) ? state.page : null
   return renderSiteFooter(infoActive)
 }
 
+function renderCoexistPack(pack: { id: string; name: string; decks: Deck[] }): string {
+  if (pack.decks.length === 0) {
+    return `
+      <section class="coexist-pack" data-coexist-pack="${pack.id}">
+        <div class="coexist-pack__head">
+          <h2 class="coexist-pack__title">${pack.name}</h2>
+        </div>
+        <p class="empty-hint">등록된 조합이 없습니다.</p>
+      </section>
+    `
+  }
+
+  const expanded = Boolean(state.coexistExpanded[pack.id])
+  const head = `
+    <div class="coexist-pack__head">
+      <h2 class="coexist-pack__title">
+        ${pack.name}
+        <span class="coexist-pack__count">${pack.decks.length}덱</span>
+      </h2>
+      <button
+        type="button"
+        class="coexist-pack__toggle"
+        data-coexist-toggle="${pack.id}"
+        aria-expanded="${expanded}"
+      >${expanded ? '접기' : '모두 보기'}</button>
+    </div>
+  `
+
+  if (expanded) {
+    return `
+      <section class="coexist-pack is-expanded" data-coexist-pack="${pack.id}">
+        ${head}
+        <div class="deck-list">
+          ${pack.decks
+            .map((d, i) =>
+              renderDeckCard(deckToDisplayMatch({ ...d, note: undefined }), i + 1, {
+                showSave: true,
+              }),
+            )
+            .join('')}
+        </div>
+      </section>
+    `
+  }
+
+  return `
+    <section class="coexist-pack" data-coexist-pack="${pack.id}">
+      ${head}
+      <div class="top-rated__scroller coexist-pack__scroller" data-coexist-scroll>
+        ${pack.decks.map((d) => renderComboCard(d)).join('')}
+      </div>
+      <p class="coexist-pack__hint">좌우로 넘겨 보세요 · 모두 보기로 전법을 확인</p>
+    </section>
+  `
+}
+
 function renderRecommendPage(): string {
+  if (state.recommendTab === 'coexist') {
+    const packs = seasonCoexistPacks()
+    if (packs.length === 0) {
+      return `
+        <div class="page-body page-body--recommend">
+          <section class="coexist-pack">
+            <div class="coexist-pack__head">
+              <h2 class="coexist-pack__title">공존덱</h2>
+            </div>
+            <p class="empty-hint">등록된 공존덱이 없습니다.</p>
+          </section>
+        </div>
+      `
+    }
+    return `
+      <div class="page-body page-body--recommend page-body--coexist">
+        ${packs.map((pack) => renderCoexistPack(pack)).join('')}
+      </div>
+    `
+  }
+
   const list = seasonDecks()
   const tier1 = list.filter((d) => d.tier === 1)
   const tier2 = list.filter((d) => d.tier === 2)
@@ -2226,14 +2368,32 @@ function bindMine(): void {
 }
 
 function bindRecommend(): void {
-  document.querySelectorAll<HTMLButtonElement>('.page-body--recommend [data-deck-id]').forEach((btn) => {
+  const root = document.querySelector('.page-body--recommend') ?? document
+
+  root.querySelectorAll<HTMLButtonElement>('[data-deck-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.deckId
       if (id) openDeckModal(id)
     })
   })
 
-  bindSaveComboButtons(document.querySelector('.page-body--recommend') ?? document)
+  bindSaveComboButtons(root)
+
+  root.querySelectorAll<HTMLElement>('[data-coexist-scroll]').forEach((scroller) => {
+    bindHorizontalScroller(scroller)
+  })
+
+  root.querySelectorAll<HTMLButtonElement>('[data-coexist-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.coexistToggle
+      if (!id) return
+      state.coexistExpanded[id] = !state.coexistExpanded[id]
+      render()
+      document.querySelector(`[data-coexist-pack="${CSS.escape(id)}"]`)?.scrollIntoView({
+        block: 'start',
+      })
+    })
+  })
 
   document.querySelectorAll<HTMLButtonElement>('[data-expand-tier]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -2329,6 +2489,13 @@ function bindShell(): void {
     btn.addEventListener('click', () => {
       const tab = (btn.dataset.tab as RosterTab) ?? 'generals'
       switchTab(tab)
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('[data-recommend-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.recommendTab as RecommendTab | undefined
+      if (tab === 'tier' || tab === 'coexist') switchRecommendTab(tab)
     })
   })
 }

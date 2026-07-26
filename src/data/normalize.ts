@@ -1,5 +1,6 @@
 import { zhSkillToKo } from './zhKoSkills'
 import { zhDoctrineToKo } from './zhKoDoctrines'
+import { zhTroopSpecToKo, zhTroopTypeToKo } from './zhKoTroops'
 
 /**
  * 표 데이터 표기 흔들림을 하나로 맞춥니다.
@@ -74,10 +75,15 @@ const ALIASES: Record<string, string> = {
   '<낙신부> 상': '<낙신부>상',
   '<낙신부> 하': '<낙신부>하',
   칠군수물: '칠군수몰',
+  '칠군 수몰': '칠군수몰',
   공근선: '공근신',
   정남사공: '정남권종',
   '세금 과징': '세금과징수',
   기문遁갑: '기문둔갑',
+  예측의신: '예측의 신',
+  '천하 평론': '천하평론',
+  '속수 무책': '속수무책',
+  '기문 둔갑': '기문둔갑',
 }
 
 const CJK = /[\u4e00-\u9fff]/
@@ -102,7 +108,7 @@ function applyKoAlias(t: string): string {
 }
 
 function zhToKo(raw: string): string | null {
-  return zhSkillToKo(raw) ?? zhDoctrineToKo(raw)
+  return zhSkillToKo(raw) ?? zhDoctrineToKo(raw) ?? zhTroopTypeToKo(raw) ?? zhTroopSpecToKo(raw)
 }
 
 export function normName(raw: string): string {
@@ -117,6 +123,28 @@ export function normList(items: string[]): string[] {
   const seen = new Set<string>()
   for (const item of items) {
     const n = normName(item)
+    if (!n || seen.has(n)) continue
+    seen.add(n)
+    out.push(n)
+  }
+  return out
+}
+
+/** 병종명 정규화 (중국어·별칭 포함) */
+export function normTroopType(raw: string): string {
+  const t = raw.trim().replace(/\s+/g, '')
+  if (!t || t === '없음') return ''
+  return zhTroopTypeToKo(t) ?? applyKoAlias(t) ?? t
+}
+
+/** 병종 특화 목록 정규화 */
+export function normTroopSpecs(items: string[]): string[] {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const item of items) {
+    const t = item.trim().replace(/\s+/g, '')
+    if (!t || t === '없음') continue
+    const n = zhTroopSpecToKo(t) ?? applyKoAlias(t) ?? t
     if (!n || seen.has(n)) continue
     seen.add(n)
     out.push(n)

@@ -320,6 +320,70 @@ body::before {
   pointer-events: none;
 }
 
+.coexist-pack {
+  margin: 0 0 22px;
+}
+
+.coexist-pack__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.coexist-pack__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.coexist-pack__count {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0;
+}
+
+.coexist-pack__toggle {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--gold-soft);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.coexist-pack__toggle:hover {
+  border-color: var(--gold);
+  background: var(--surface-2);
+  color: var(--gold);
+}
+
+.coexist-pack__hint {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.coexist-pack.is-expanded .deck-list {
+  margin-top: 2px;
+}
+
 .combo-card__rank {
   display: inline-flex;
   align-items: baseline;
@@ -2462,6 +2526,33 @@ html.modal-open body {
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.25;
+}
+
+.member-card__troop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.troop-chip {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+}
+
+.troop-chip--type {
+  background: rgba(70, 110, 160, 0.16);
+  border: 1px solid rgba(90, 140, 190, 0.35);
+  color: #9ec0df;
+}
+
+.troop-chip--spec {
+  background: rgba(90, 140, 100, 0.14);
+  border: 1px solid rgba(110, 160, 120, 0.32);
+  color: #a8c9ae;
 }
 
 .member-card__skills {

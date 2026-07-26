@@ -43,6 +43,10 @@ export interface DeckMember {
   slots: [SkillSlotDef, SkillSlotDef]
   /** 병법 3개 (고정 착용) */
   doctrines: [string, string, string]
+  /** 병종 — S2+ (예: 장창병, 중기병) */
+  troopType?: string
+  /** 병종 특화 — S2+ (예: 철마금과). 복수 가능 */
+  troopSpecs?: string[]
 }
 
 export interface Deck {
@@ -54,6 +58,13 @@ export interface Deck {
   formation?: string
   members: [DeckMember, DeckMember, DeckMember]
   note?: string
+}
+
+/** 공존 세트 — 서로 겹치지 않는 덱 묶음 */
+export interface CoexistPack {
+  id: string
+  name: string
+  decks: Deck[]
 }
 
 export type SlotStatus = 'required' | 'alt' | 'unresolved'
@@ -73,6 +84,8 @@ export interface MemberBuild {
   slots: [AssignedSlot, AssignedSlot]
   doctrines: string[]
   doctrineNames: string[]
+  troopType?: string
+  troopSpecs?: string[]
 }
 
 export interface DeckMatch {

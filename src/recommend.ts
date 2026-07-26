@@ -82,6 +82,8 @@ function buildMember(
     slots: [slot0, slot1],
     doctrines: [...member.doctrines],
     doctrineNames: member.doctrines.map((id) => nameOf(id) || id),
+    troopType: member.troopType,
+    troopSpecs: member.troopSpecs ? [...member.troopSpecs] : undefined,
   }
 }
 
