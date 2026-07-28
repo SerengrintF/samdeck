@@ -2424,21 +2424,27 @@ html.modal-open body {
   font-weight: 600;
 }
 
-.tier-1 {
+.tier-0 {
   background: var(--lacquer);
   color: #fff;
 }
 
-.tier-2 {
+.tier-1 {
   background: var(--surface);
   color: var(--gold-soft);
+  border: 1px solid var(--line);
+}
+
+.tier-2 {
+  background: transparent;
+  color: var(--ink-muted, #8a7f6e);
   border: 1px solid var(--line);
 }
 
 .tier-3 {
   background: transparent;
   color: var(--ink-muted, #8a7f6e);
-  border: 1px solid var(--line);
+  border: 1px dashed var(--line);
 }
 
 .formation-badge {
@@ -2463,6 +2469,28 @@ html.modal-open body {
   margin: 0 0 6px;
   font-size: 0.75rem;
   color: var(--text-dim);
+}
+
+.deck-card__feature {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+  border-radius: 6px;
+  border: 1px solid rgba(201, 162, 39, 0.16);
+  background: rgba(8, 7, 5, 0.28);
+}
+
+.deck-card__feature-label {
+  display: inline-block;
+  margin-right: 6px;
+  font-weight: 700;
+  color: var(--gold-soft);
+}
+
+.deck-card__feature-label::after {
+  content: ' ·';
 }
 
 .member-row {

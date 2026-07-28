@@ -108,7 +108,7 @@ const state = {
   packSize: 0,
   openSetId: null as string | null,
   detailDeckId: null as string | null,
-  tierExpanded: { 1: false, 2: false, 3: false } as Record<1 | 2 | 3, boolean>,
+  tierExpanded: { 0: false, 1: false, 2: false } as Record<0 | 1 | 2, boolean>,
   /** 공존 세트 「모두 보기」 펼침 */
   coexistExpanded: {} as Record<string, boolean>,
   deckRatings: loadDeckRatings() as Record<string, RatingValue>,
@@ -185,7 +185,7 @@ function setSeason(id: SeasonId): void {
   state.ownedSkills = loadOwnedSkills(id)
   state.trackSkills = loadTrackSkills(id)
   state.myCombos = loadMyCombos(id)
-  state.tierExpanded = { 1: false, 2: false, 3: false }
+  state.tierExpanded = { 0: false, 1: false, 2: false }
   state.coexistExpanded = {}
   state.sets = []
   state.readyDeckCount = 0
@@ -849,6 +849,11 @@ function renderDeckCard(
         ${m.members.map((mem, i) => renderMemberCol(mem, m.deck.members[i])).join('')}
       </div>
       ${
+        m.deck.feature
+          ? `<p class="deck-card__feature"><span class="deck-card__feature-label">덱 특징</span>${m.deck.feature}</p>`
+          : ''
+      }
+      ${
         showRating
           ? `<div class="deck-card__rating">
               <span class="deck-card__rating-label">평점</span>
@@ -1428,9 +1433,9 @@ function renderSetCard(set: DeckSet): string {
           ${set.isComplete ? '' : '<span class="set-card__partial">최대 구성</span>'}
         </div>
         <div class="set-card__meta">
+          <span>0티어 ${set.tier0Count}</span>
           <span>1티어 ${set.tier1Count}</span>
           <span>2티어 ${set.tier2Count}</span>
-          <span>3티어 ${set.tier3Count}</span>
           ${set.altUsedCount ? `<span>대체 ${set.altUsedCount}</span>` : '<span>전법 겹침 없음</span>'}
           <span class="set-card__chevron" aria-hidden="true">${open ? '▾' : '▸'}</span>
         </div>
@@ -1903,11 +1908,11 @@ function renderRecommendPage(): string {
   }
 
   const list = seasonDecks()
+  const tier0 = list.filter((d) => d.tier === 0)
   const tier1 = list.filter((d) => d.tier === 1)
   const tier2 = list.filter((d) => d.tier === 2)
-  const tier3 = list.filter((d) => d.tier === 3)
 
-  const section = (title: string, tier: 1 | 2 | 3, items: Deck[]) => {
+  const section = (title: string, tier: 0 | 1 | 2, items: Deck[]) => {
     if (items.length === 0) {
       return `
         <section class="tier-section">
@@ -1943,9 +1948,9 @@ function renderRecommendPage(): string {
 
   return `
     <div class="page-body page-body--recommend">
+      ${section('0티어', 0, tier0)}
       ${section('1티어', 1, tier1)}
       ${section('2티어', 2, tier2)}
-      ${section('3티어', 3, tier3)}
     </div>
   `
 }
@@ -2414,8 +2419,8 @@ function bindRecommend(): void {
 
   document.querySelectorAll<HTMLButtonElement>('[data-expand-tier]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const tier = Number(btn.dataset.expandTier) as 1 | 2 | 3
-      if (tier !== 1 && tier !== 2 && tier !== 3) return
+      const tier = Number(btn.dataset.expandTier) as 0 | 1 | 2
+      if (tier !== 0 && tier !== 1 && tier !== 2) return
       state.tierExpanded[tier] = true
       const y = window.scrollY
       render()
@@ -2425,8 +2430,8 @@ function bindRecommend(): void {
 
   document.querySelectorAll<HTMLButtonElement>('[data-collapse-tier]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const tier = Number(btn.dataset.collapseTier) as 1 | 2 | 3
-      if (tier !== 1 && tier !== 2 && tier !== 3) return
+      const tier = Number(btn.dataset.collapseTier) as 0 | 1 | 2
+      if (tier !== 0 && tier !== 1 && tier !== 2) return
       state.tierExpanded[tier] = false
       render()
       document.querySelector(`[data-tier-section="${tier}"]`)?.scrollIntoView({ block: 'start' })

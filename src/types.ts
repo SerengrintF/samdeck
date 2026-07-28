@@ -1,6 +1,6 @@
 export type Faction = '위' | '촉' | '오' | '군' | '기타'
 
-export type Tier = 1 | 2 | 3
+export type Tier = 0 | 1 | 2 | 3
 
 export type SeasonId = 'S1' | 'S2' | 'S3'
 
@@ -61,7 +61,10 @@ export interface Deck {
   /** 진영(진형) — 예: 기형진, 어린진. 복수면 "기형진/방원진" */
   formation?: string
   members: [DeckMember, DeckMember, DeckMember]
+  /** 공존 세트 표기 등 (예: 공존 1) */
   note?: string
+  /** 덱 특징 요약 */
+  feature?: string
 }
 
 /** 공존 세트 — 서로 겹치지 않는 덱 묶음 */
@@ -117,9 +120,9 @@ export interface DeckSet {
   targetSize: number
   /** 목표만큼 채웠는지 */
   isComplete: boolean
+  tier0Count: number
   tier1Count: number
   tier2Count: number
-  tier3Count: number
   altUsedCount: number
 }
 

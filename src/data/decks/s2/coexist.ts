@@ -15,9 +15,11 @@ const s2CoexistPack1: CoexistPack = {
       id: 's2-cx1-ma-zhutai-yuan',
       name: '마초·주태·원소',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '안형진/기형진',
       note: '공존 1',
+      feature:
+        'S3 신전법 차도 골치 조합. 단판 강하지만 주태 대항 때문에 연전·연속 격파는 약함. 사마의 천적, 주유·조운 계열에는 열세. 주태 호부 장궁 전환이 거의 필수.',
       members: [
         mem('마초', '난관 돌파', '승전 강화', ['파죽지세', '예리한 통찰'], [
           '철기령',
@@ -46,8 +48,10 @@ const s2CoexistPack1: CoexistPack = {
       id: 's2-cx1-gan-zhaoyun-diao',
       name: '감부인·조운·초선',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '봉시진',
+      feature:
+        '중후반 만능형(멀티 상성). 병기계 대부분에 우위. 육손·사마의는 다소 어렵지만 풀세팅이면 회피·방어로 승률 확보 가능. 호부 3으로 전원 창병·견정부이, 초선 장서각 개방 시 완전체.',
       note: '공존 1',
       members: [
         mem(
@@ -73,8 +77,10 @@ const s2CoexistPack1: CoexistPack = {
       id: 's2-cx1-yuejin-chengong-lvbu',
       name: '악진·진궁·여포',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '언월진',
+      feature:
+        '풀홍도 기준 T0 도박형. 강화보다 운 비중이 크고, 일방 패배 또는 순삭 중 하나. 여포는 고빈도·중딜이라 주태를 덜 무서워하며, S3 병기계 속공 중 체감이 가장 좋은 편.',
       note: '공존 1',
       members: [
         mem('악진', '팔방전', '강철의 의지', ['압도적 승리', '측면공격'], [
@@ -102,8 +108,10 @@ const s2CoexistPack1: CoexistPack = {
       id: 's2-cx1-cao-xunyu-sima',
       name: '조조·순욱·사마의',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
+      feature:
+        '중후반 안정 강캐. 전투 소모가 크고 연전은 평범. 마초·육손에 열세이나 풀세팅이면 육손은 덜 두려움. 그 외는 5:5~, 주유·조운을 억제. 약수마+청천벽력으로 강도 상승.',
       note: '공존 1',
       members: [
         mem(
@@ -131,9 +139,11 @@ const s2CoexistPack1: CoexistPack = {
       id: 's2-cx1-lusu-sunquan-luxun',
       name: '노숙·손권·육손',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
       note: '공존 1',
+      feature:
+        '공존하기 쉬운 육손 조합. 쌍황육 대비 안정·상한·하한이 낮음. 3궁/3창/3기 모두 가능하고 구성마다 저격 대상이 달라 전장에 맞춰 선택.',
       members: [
         mem('노숙', '견고한 방어', '예측의 신', ['허점공략'], [
           '치국론',
@@ -166,8 +176,10 @@ const s2CoexistPack2: CoexistPack = {
       id: 's2-cx2-yuejin-xunyu-zhouyu',
       name: '악진·순욱·주유',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '언월진',
+      feature:
+        'S3 초반부터 강세. 도화마가 많을수록 강하고, 원래 태원마 상대용 고속 깎기 조합. 조운·사마의 증가 전엔 체감 양호. 세팅을 많이 타고 공존이 어려우며 여포에 약함. 3인 병종을 다르게 맞춰 악진 병교 발동이 최적.',
       note: '공존 2',
       members: [
         mem(
@@ -195,8 +207,10 @@ const s2CoexistPack2: CoexistPack = {
       id: 's2-cx2-gan-zhaoyun-diao',
       name: '감부인·조운·초선',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '봉시진',
+      feature:
+        '중후반 만능형(멀티 상성). 병기계 대부분에 우위. 육손·사마의는 다소 어렵지만 풀세팅이면 회피·방어로 승률 확보 가능. 호부 3으로 전원 창병·견정부이, 초선 장서각 개방 시 완전체.',
       note: '공존 2',
       members: [
         mem(
@@ -222,9 +236,11 @@ const s2CoexistPack2: CoexistPack = {
       id: 's2-cx2-ma-zhutai-yuan',
       name: '마초·주태·원소',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '안형진/기형진',
       note: '공존 2',
+      feature:
+        'S3 신전법 차도 골치 조합. 단판 강하지만 주태 대항 때문에 연전·연속 격파는 약함. 사마의 천적, 주유·조운 계열에는 열세. 주태 호부 장궁 전환이 거의 필수.',
       members: [
         mem('마초', '난관 돌파', '승전 강화', ['파죽지세', '예리한 통찰'], [
           '철기령',
@@ -253,9 +269,11 @@ const s2CoexistPack2: CoexistPack = {
       id: 's2-cx2-xiahoudun-cao-sima',
       name: '하후돈·조조·사마의',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
       note: '공존 2',
+      feature:
+        '구버전 클래식 사마의(노태위). 신태위 대비 주유·여포 승률↑. 내전·육손·조운에는 약하고 손실도 더 큼.',
       members: [
         mem(
           '하후돈',
@@ -281,9 +299,11 @@ const s2CoexistPack2: CoexistPack = {
       id: 's2-cx2-lusu-sunquan-luxun',
       name: '노숙·손권·육손',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
       note: '공존 2',
+      feature:
+        '공존하기 쉬운 육손 조합. 쌍황육 대비 안정·상한·하한이 낮음. 3궁/3창/3기 모두 가능하고 구성마다 저격 대상이 달라 전장에 맞춰 선택.',
       members: [
         mem('노숙', '적재적소', '예측의 신', ['견고한 방어', '허점공략', '세금과징수'], [
           '치국론',
@@ -316,8 +336,10 @@ const s2CoexistPack3: CoexistPack = {
       id: 's2-cx3-zhouyu-zhutai-huang',
       name: '주유·주태·황개',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '안형진',
+      feature:
+        'S2 서황유(화신) 후속. 홍도 후 효과가 더 좋고, 약서버는 저강화도 가능. 주태 미러는 태원마·태x육 소폭 우위, 주유 미러는 진순유 열세. 조운·사마의에 약하고, 그 외는 황개 버팀이 관건.',
       note: '공존 3',
       members: [
         mem('주유', '승전 강화', '충신의 기재', ['기정상생', '예리한 통찰'], [
@@ -344,8 +366,10 @@ const s2CoexistPack3: CoexistPack = {
       id: 's2-cx3-gan-zhaoyun-diao',
       name: '감부인·조운·초선',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '봉시진',
+      feature:
+        '중후반 만능형(멀티 상성). 병기계 대부분에 우위. 육손·사마의는 다소 어렵지만 풀세팅이면 회피·방어로 승률 확보 가능. 호부 3으로 전원 창병·견정부이, 초선 장서각 개방 시 완전체.',
       note: '공존 3',
       members: [
         mem(
@@ -371,8 +395,10 @@ const s2CoexistPack3: CoexistPack = {
       id: 's2-cx3-yuejin-chengong-lvbu',
       name: '악진·진궁·여포',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '언월진',
+      feature:
+        '풀홍도 기준 T0 도박형. 강화보다 운 비중이 크고, 일방 패배 또는 순삭 중 하나. 여포는 고빈도·중딜이라 주태를 덜 무서워하며, S3 병기계 속공 중 체감이 가장 좋은 편.',
       note: '공존 3',
       members: [
         mem('악진', '팔방전', '강철의 의지', ['압도적 승리', '측면공격'], [
@@ -400,8 +426,10 @@ const s2CoexistPack3: CoexistPack = {
       id: 's2-cx3-cao-xunyu-sima',
       name: '조조·순욱·사마의',
       season: 'S2',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
+      feature:
+        '중후반 안정 강캐. 전투 소모가 크고 연전은 평범. 마초·육손에 열세이나 풀세팅이면 육손은 덜 두려움. 그 외는 5:5~, 주유·조운을 억제. 약수마+청천벽력으로 강도 상승.',
       note: '공존 3',
       members: [
         mem(
@@ -429,9 +457,11 @@ const s2CoexistPack3: CoexistPack = {
       id: 's2-cx3-zhangfei-liubei-guanyu',
       name: '장비·유비·관우',
       season: 'S2',
-      tier: 3,
+      tier: 2,
       formation: '일자진/기형진',
       note: '공존 3',
+      feature:
+        '초반 폭발 능동 제어. 장서각 장비 만인지적 위압 + 관우 칠군수몰 무장해제/전법봉쇄 체인이 핵심. 육손 억제, 사마의는 각성 전 끊기가 관건. 추격·지휘형에는 열세.',
       members: [
         mem('장비', '신의 가호', '압도적 승리', ['팔방전'], [
           '장서각',

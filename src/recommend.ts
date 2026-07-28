@@ -152,9 +152,9 @@ export function tryFitDeck(
 }
 
 function scoreSet(decks: DeckMatch[]): number {
-  const t1 = decks.filter((d) => d.deck.tier === 1).length
+  const t0 = decks.filter((d) => d.deck.tier === 0).length
   const alt = decks.reduce((n, d) => n + d.altUsedCount, 0)
-  return decks.length * 10_000 + t1 * 100 - alt
+  return decks.length * 10_000 + t0 * 100 - alt
 }
 
 function setSignature(decks: DeckMatch[]): string {
@@ -298,9 +298,9 @@ export function findDeckSets(
     decks: decksInSet,
     targetSize: SET_SIZE,
     isComplete: decksInSet.length >= SET_SIZE,
+    tier0Count: decksInSet.filter((d) => d.deck.tier === 0).length,
     tier1Count: decksInSet.filter((d) => d.deck.tier === 1).length,
     tier2Count: decksInSet.filter((d) => d.deck.tier === 2).length,
-    tier3Count: decksInSet.filter((d) => d.deck.tier === 3).length,
     altUsedCount: decksInSet.reduce((n, d) => n + d.altUsedCount, 0),
   }))
 

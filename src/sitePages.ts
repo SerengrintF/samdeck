@@ -21,10 +21,10 @@ function seasonStatsHtml(): string {
       return `<li><strong>${s.label}(${s.short})</strong> — 준비 중. 데이터가 열리면 선택 목록에 활성화됩니다.</li>`
     }
     const cat = getSeasonCatalog(s.id as SeasonId)
+    const t0 = cat.decks.filter((d) => d.tier === 0).length
     const t1 = cat.decks.filter((d) => d.tier === 1).length
     const t2 = cat.decks.filter((d) => d.tier === 2).length
-    const t3 = cat.decks.filter((d) => d.tier === 3).length
-    return `<li><strong>${s.label}(${s.short})</strong> — 등록 덱 ${cat.decks.length}개(1티어 ${t1} · 2티어 ${t2} · 3티어 ${t3}), 장수 ${cat.generals.length}명, 전법 ${cat.skills.length}개.</li>`
+    return `<li><strong>${s.label}(${s.short})</strong> — 등록 덱 ${cat.decks.length}개(0티어 ${t0} · 1티어 ${t1} · 2티어 ${t2}), 장수 ${cat.generals.length}명, 전법 ${cat.skills.length}개.</li>`
   }).join('')
 }
 
@@ -77,7 +77,7 @@ function renderGuide(): string {
       <h2>3. 화면별 사용법</h2>
       <h3>조합 추천</h3>
       <p>
-        시즌별로 등록된 덱을 1·2·3티어로 나눠 보여 줍니다.
+        시즌별로 등록된 덱을 0·1·2티어로 나눠 보여 줍니다.
         카드의 별점은 이용자 평점을 참고용으로 표시하며, 공식 밸런스 수치나 승률 보장이 아닙니다.
         관심 있는 덱은 「나의 조합」에 저장해 두고, 나중에 겹침 검사에 활용할 수 있습니다.
       </p>
@@ -98,7 +98,7 @@ function renderGuide(): string {
       <h2>4. 티어·진형 읽는 법</h2>
       <p>
         티어는 운영자가 정리한 <strong>참고용 우선순위</strong>입니다.
-        1티어는 범용성·성능 면에서 자주 거론되는 조합, 2·3티어는 상황·보유에 따라 쓰는 후보로 이해하면 됩니다.
+        0티어는 범용성·성능 면에서 자주 거론되는 조합, 1·2티어는 상황·보유에 따라 쓰는 후보로 이해하면 됩니다.
         패치·시즌 환경에 따라 체감 강도가 달라질 수 있으니, 최종 편성은 본인 계정 상황과 실전 경험을 기준으로 결정하세요.
       </p>
       <p>
@@ -110,7 +110,8 @@ function renderGuide(): string {
         <strong>가점</strong>(지력·선공 등),
         <strong>병종</strong>(장창병·중기병 등),
         <strong>병종 특화</strong>(철마금과·억연부동 등)가 카드에 함께 표시될 수 있습니다.
-        가이드에 없는 덱은 비워 둘 수 있습니다.
+        일부 덱에는 <strong>덱 특징</strong>(상성·운영 요약)이 붙습니다.
+        가이드에 없는 항목은 비워 둘 수 있습니다.
       </p>
 
       <h2>5. 시즌 데이터 현황</h2>

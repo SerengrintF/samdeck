@@ -15,7 +15,7 @@ const s1CoexistPack1: CoexistPack = {
       id: 's1-cx1-zhuge-huanggai-daqiao',
       name: '제갈량·황개·대교',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '안형진',
       note: '공존 1',
       members: [
@@ -37,7 +37,7 @@ const s1CoexistPack1: CoexistPack = {
       id: 's1-cx1-caocao-guojia-xunyu',
       name: '조조·곽가·순욱',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
       note: '공존 1',
       members: [
@@ -59,7 +59,7 @@ const s1CoexistPack1: CoexistPack = {
       id: 's1-cx1-liubei-zhangfei-huangzhong',
       name: '유비·장비·황충',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
       note: '공존 1',
       members: [
@@ -81,7 +81,7 @@ const s1CoexistPack1: CoexistPack = {
       id: 's1-cx1-diaochan-caiwenji-zhanghe',
       name: '초선·채문희·장합',
       season: 'S1',
-      tier: 2,
+      tier: 1,
       note: '공존 1',
       members: [
         mem('초선', '전력지원', '백전불태', [], ['세음', '고무', '병수']),
@@ -93,7 +93,7 @@ const s1CoexistPack1: CoexistPack = {
       id: 's1-cx1-zhouyu-sunquan-xiaoqiao',
       name: '주유·손권·소교',
       season: 'S1',
-      tier: 3,
+      tier: 2,
       formation: '안형진',
       note: '공존 1',
       members: [
@@ -123,7 +123,7 @@ const s1CoexistPack2: CoexistPack = {
       id: 's1-cx2-zhuge-huanggai-daqiao',
       name: '제갈량·황개·대교',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '안형진',
       note: '공존 2',
       members: [
@@ -145,7 +145,7 @@ const s1CoexistPack2: CoexistPack = {
       id: 's1-cx2-sunshangxiang-zhenji-diaochan',
       name: '손상향·견희·초선',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '방원진',
       note: '공존 2',
       members: [
@@ -158,7 +158,7 @@ const s1CoexistPack2: CoexistPack = {
       id: 's1-cx2-caocao-guojia-xunyu',
       name: '조조·곽가·순욱',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
       note: '공존 2',
       members: [
@@ -180,7 +180,7 @@ const s1CoexistPack2: CoexistPack = {
       id: 's1-cx2-zhouyu-sunquan-xiaoqiao',
       name: '주유·손권·소교',
       season: 'S1',
-      tier: 3,
+      tier: 2,
       formation: '안형진',
       note: '공존 2',
       members: [
@@ -202,7 +202,7 @@ const s1CoexistPack2: CoexistPack = {
       id: 's1-cx2-xiahoudun-xiahouyuan-dengai',
       name: '하후돈·하후연·등애',
       season: 'S1',
-      tier: 3,
+      tier: 2,
       formation: '기형진',
       note: '공존 2',
       members: [
@@ -232,7 +232,7 @@ const s1CoexistPack3: CoexistPack = {
       id: 's1-cx3-zhuge-huanggai-daqiao',
       name: '제갈량·황개·대교',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '안형진',
       note: '공존 3',
       members: [
@@ -254,7 +254,7 @@ const s1CoexistPack3: CoexistPack = {
       id: 's1-cx3-liubei-zhaoyun-diaochan',
       name: '유비·조운·초선',
       season: 'S1',
-      tier: 2,
+      tier: 1,
       formation: '기형진',
       note: '공존 3',
       members: [
@@ -276,7 +276,7 @@ const s1CoexistPack3: CoexistPack = {
       id: 's1-cx3-caocao-guojia-xunyu',
       name: '조조·곽가·순욱',
       season: 'S1',
-      tier: 1,
+      tier: 0,
       formation: '기형진',
       note: '공존 3',
       members: [
@@ -298,7 +298,7 @@ const s1CoexistPack3: CoexistPack = {
       id: 's1-cx3-xiahouyuan-guanyu-dengai',
       name: '하후연·관우·등애',
       season: 'S1',
-      tier: 3,
+      tier: 2,
       formation: '기형진',
       note: '공존 3',
       members: [
@@ -312,7 +312,7 @@ const s1CoexistPack3: CoexistPack = {
       id: 's1-cx3-zhouyu-sunquan-xiaoqiao',
       name: '주유·손권·소교',
       season: 'S1',
-      tier: 3,
+      tier: 2,
       formation: '안형진',
       note: '공존 3',
       members: [
