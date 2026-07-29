@@ -63,6 +63,10 @@ import type {
   Faction,
   General,
   MemberBuild,
+  PioneerDeckGuide,
+  PioneerLandDefense,
+  PioneerLandGuide,
+  PioneerMemberGuide,
   SeasonId,
   Skill,
 } from './types'
@@ -78,7 +82,8 @@ type AppPage = 'recommend' | 'roster' | 'mine'
 type NavPage = AppPage | InfoPage
 const APP_PAGES: AppPage[] = ['recommend', 'roster', 'mine']
 type RosterTab = 'generals' | 'skills'
-type RecommendTab = 'tier' | 'coexist'
+type RecommendTab = 'tier' | 'coexist' | 'pioneer'
+const RECOMMEND_TABS: RecommendTab[] = ['tier', 'coexist', 'pioneer']
 /** browse = 메뉴 페이지, set-result = 장수 조합의 세트 추천 결과 */
 type AppView = 'browse' | 'set-result'
 
@@ -149,10 +154,23 @@ function seasonCoexistPacks() {
   return catalog().coexistPacks
 }
 
+function seasonPioneerDecks() {
+  return catalog().pioneerDecks
+}
+
+function seasonPioneerGuides() {
+  return catalog().pioneerGuides
+}
+
+function seasonPioneerLandGuide() {
+  return catalog().pioneerLandGuide
+}
+
 function findSeasonDeck(deckId: string) {
   return (
     seasonDecks().find((d) => d.id === deckId) ??
-    seasonCoexistDecks().find((d) => d.id === deckId)
+    seasonCoexistDecks().find((d) => d.id === deckId) ??
+    seasonPioneerDecks().find((d) => d.id === deckId)
   )
 }
 
@@ -818,6 +836,13 @@ function renderSaveComboBtn(deckId: string): string {
   `
 }
 
+function renderDeckCategoryBadge(deck: Deck): string {
+  if (deck.category === 'pioneer') {
+    return '<span class="pioneer-badge">개척덱</span>'
+  }
+  return `<span class="tier-badge tier-${deck.tier}">${deck.tier}티어</span>`
+}
+
 function renderDeckCard(
   m: DeckMatch,
   order?: number,
@@ -834,7 +859,7 @@ function renderDeckCard(
       <header class="deck-card__head">
         <div class="deck-card__title-row">
           ${order != null ? `<span class="deck-order">${order}</span>` : ''}
-          <span class="tier-badge tier-${m.deck.tier}">${m.deck.tier}티어</span>
+          ${renderDeckCategoryBadge(m.deck)}
           ${formation ? `<span class="formation-badge">${formation}</span>` : ''}
           <h3 class="deck-card__name">${m.deck.name}</h3>
         </div>
@@ -948,7 +973,7 @@ function renderComboCard(deck: Deck, opts?: { rank?: number }): string {
       <button type="button" class="combo-card__main" data-deck-id="${deck.id}">
         <div class="combo-card__meta">
           ${rankHtml}
-          <span class="tier-badge tier-${deck.tier}">${deck.tier}티어</span>
+          ${renderDeckCategoryBadge(deck)}
           ${formation ? `<span class="formation-badge">${formation}</span>` : ''}
           ${renderTipBadge(deck.id)}
         </div>
@@ -1100,7 +1125,7 @@ async function setDeckRating(deckId: string, picked: number): Promise<void> {
 }
 
 async function hydrateSeasonRatings(): Promise<void> {
-  const ids = [...seasonDecks(), ...seasonCoexistDecks()].map((d) => d.id)
+  const ids = [...seasonDecks(), ...seasonCoexistDecks(), ...seasonPioneerDecks()].map((d) => d.id)
   if (ids.length === 0) return
   if (!isRatingsApiConfigured()) return
 
@@ -1577,6 +1602,12 @@ function renderShellChrome(): string {
           data-recommend-tab="coexist"
           tabindex="${showRecommendSub ? 0 : -1}"
         >공존덱</button>
+        <button
+          type="button"
+          class="global-nav__sub-btn ${state.recommendTab === 'pioneer' ? 'is-active' : ''}"
+          data-recommend-tab="pioneer"
+          tabindex="${showRecommendSub ? 0 : -1}"
+        >개척덱</button>
   `
 
   const rosterSub = `
@@ -1885,7 +1916,180 @@ function renderCoexistPack(pack: { id: string; name: string; decks: Deck[] }): s
   `
 }
 
+function renderPioneerSkills(skills: string[]): string {
+  return skills
+    .map((skill) => `<span class="pioneer-skill">${displaySkillName(skill)}</span>`)
+    .join('<span class="pioneer-skill-separator" aria-hidden="true">/</span>')
+}
+
+function renderPioneerMember(member: PioneerMemberGuide): string {
+  const optionNames = member.generalOptions.join(' / ')
+  return `
+    <article class="pioneer-member">
+      <div class="pioneer-member__generals ${member.generalOptions.length > 2 ? 'is-many' : ''}" aria-label="${optionNames}">
+        ${member.generalOptions
+          .map((general) => {
+            const src = portraitSrc(general)
+            return `
+              <div class="pioneer-member__general">
+                <span class="pioneer-member__portrait">
+                  ${
+                    src
+                      ? `<img src="${src}" alt="" loading="lazy" width="64" height="64" draggable="false" />`
+                      : `<span class="pioneer-member__fallback">${general.slice(0, 1)}</span>`
+                  }
+                </span>
+                <strong>${general}</strong>
+              </div>
+            `
+          })
+          .join('<span class="pioneer-member__or">또는</span>')}
+      </div>
+      <dl class="pioneer-member__build">
+        <div>
+          <dt><span class="pioneer-level pioneer-level--10">10</span> 전법</dt>
+          <dd>${renderPioneerSkills(member.level10Skills)}</dd>
+        </div>
+        <div>
+          <dt><span class="pioneer-level pioneer-level--20">20</span> 전법</dt>
+          <dd>${renderPioneerSkills(member.level20Skills)}</dd>
+        </div>
+        <div>
+          <dt>가점</dt>
+          <dd><span class="pioneer-stat">${member.stat}</span></dd>
+        </div>
+        <div>
+          <dt>무기·탈것</dt>
+          <dd>${member.equipment}</dd>
+        </div>
+      </dl>
+    </article>
+  `
+}
+
+function renderPioneerGuide(guide: PioneerDeckGuide, index: number): string {
+  return `
+    <article class="pioneer-guide">
+      <header class="pioneer-guide__head">
+        <div>
+          <span class="pioneer-guide__eyebrow">PIONEER ${String(index + 1).padStart(2, '0')}</span>
+          <h2 class="pioneer-guide__title">${guide.name}</h2>
+        </div>
+        <span class="pioneer-guide__formation">${guide.formation}</span>
+      </header>
+      <div class="pioneer-guide__party">
+        ${guide.members.map(renderPioneerMember).join('')}
+      </div>
+      <div class="pioneer-guide__summary">
+        <strong>운용 핵심</strong>
+        <ul>${guide.summary.map((line) => `<li>${line}</li>`).join('')}</ul>
+      </div>
+    </article>
+  `
+}
+
+function renderPioneerSection(): string {
+  const guides = seasonPioneerGuides()
+  if (guides.length === 0) {
+    return `
+      <section class="pioneer-section">
+        <h2 class="pioneer-section__title">개척덱 가이드</h2>
+        <p class="empty-hint">등록된 개척덱이 없습니다.</p>
+      </section>
+    `
+  }
+
+  return `
+    <section class="pioneer-section">
+      <div class="pioneer-section__intro">
+        <div>
+          <span class="pioneer-section__kicker">시즌 초반 육성 가이드</span>
+          <h1 class="pioneer-section__title">개척덱 &amp; 토지 육성 팁</h1>
+        </div>
+        <span class="pioneer-section__count">${guides.length} / 6</span>
+      </div>
+      <p class="pioneer-section__hint">레벨별 전법과 육성 방향을 장수별로 비교해 보세요.</p>
+      <div class="pioneer-guide-list">
+        ${guides.map(renderPioneerGuide).join('')}
+      </div>
+      ${renderPioneerLandGuide(seasonPioneerLandGuide())}
+    </section>
+  `
+}
+
+function renderPioneerLandGuide(guide: PioneerLandGuide | null): string {
+  if (!guide) return ''
+  return `
+    <section class="pioneer-land">
+      <header class="pioneer-land__head">
+        <span class="pioneer-land__eyebrow">LAND</span>
+        <h2 class="pioneer-land__title">토지 육성 팁</h2>
+      </header>
+      <p class="pioneer-land__hint">토지 레벨별 진입 조건과 목표입니다.</p>
+      <ol class="pioneer-land__steps">
+        ${guide.steps
+          .map(
+            (step) => `
+              <li class="pioneer-land__step">
+                <span class="pioneer-land__level">${step.land}</span>
+                <div class="pioneer-land__body">
+                  <p class="pioneer-land__requirement">${step.requirement}</p>
+                  <p class="pioneer-land__goal">${step.goal}</p>
+                </div>
+              </li>
+            `,
+          )
+          .join('')}
+      </ol>
+      <div class="pioneer-land__summary">
+        <strong>개척 요령</strong>
+        <ul>${guide.summary.map((line) => `<li>${line}</li>`).join('')}</ul>
+      </div>
+      ${renderPioneerDefenses(guide.defenses)}
+    </section>
+  `
+}
+
+function renderPioneerDefenses(defenses: PioneerLandDefense[]): string {
+  if (defenses.length === 0) return ''
+  return `
+    <div class="pioneer-defense">
+      <h3 class="pioneer-defense__title">토지 수비군 정보</h3>
+      <p class="pioneer-land__hint">수비 전력과 피해야 할 조합을 미리 확인하세요.</p>
+      <div class="pioneer-defense__list">
+        ${defenses
+          .map(
+            (d) => `
+              <article class="pioneer-defense__item">
+                <header class="pioneer-defense__head">
+                  <span class="pioneer-defense__land">${d.land}레벨</span>
+                  <span class="pioneer-defense__troops">${d.generalLevel} · 병력 ${d.troops}</span>
+                </header>
+                <ul class="pioneer-defense__skills">
+                  <li><span>고유 전법</span><strong>${d.innateSkillLevel}</strong></li>
+                  <li><span>전법 1</span><strong>${d.skill1Level}</strong></li>
+                  <li><span>전법 2</span><strong>${d.skill2Level}</strong></li>
+                </ul>
+                <p class="pioneer-defense__caution">${d.caution}</p>
+                <p class="pioneer-defense__recommend">${d.recommend}</p>
+              </article>
+            `,
+          )
+          .join('')}
+      </div>
+    </div>
+  `
+}
+
 function renderRecommendPage(): string {
+  if (state.recommendTab === 'pioneer') {
+    return `
+      <div class="page-body page-body--recommend page-body--pioneer">
+        ${renderPioneerSection()}
+      </div>
+    `
+  }
+
   if (state.recommendTab === 'coexist') {
     const packs = seasonCoexistPacks()
     if (packs.length === 0) {
@@ -2222,7 +2426,7 @@ function renderMineReplacePanel(deckId: string): string {
               return `
         <li class="mine-fix__row">
           <div class="mine-fix__meta">
-            <span class="tier-badge tier-${alt.deck.tier}">${alt.deck.tier}티어</span>
+            ${renderDeckCategoryBadge(alt.deck)}
             ${formation ? `<span class="formation-badge">${formation}</span>` : ''}
             <strong class="mine-fix__name">${alt.deck.name}</strong>
             <span class="mine-fix__note">${altNote}</span>
@@ -2437,6 +2641,7 @@ function bindRecommend(): void {
       document.querySelector(`[data-tier-section="${tier}"]`)?.scrollIntoView({ block: 'start' })
     })
   })
+
 }
 
 function bindSeasonSelect(): void {
@@ -2517,7 +2722,7 @@ function bindShell(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-recommend-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.recommendTab as RecommendTab | undefined
-      if (tab === 'tier' || tab === 'coexist') switchRecommendTab(tab)
+      if (tab && RECOMMEND_TABS.includes(tab)) switchRecommendTab(tab)
     })
   })
 }

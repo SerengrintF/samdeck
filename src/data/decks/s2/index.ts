@@ -3,6 +3,7 @@ import { s2Tier0Decks } from './tier0'
 import { s2Tier1Decks } from './tier1'
 import { s2Tier2Decks } from './tier2'
 import { s2CoexistDecks, s2CoexistPacks } from './coexist'
+import { s2PioneerDecks, s2PioneerGuides, s2PioneerLandGuide } from './pioneer'
 
 /**
  * S2 티어덱 — seasonCatalog.ts 에 등록됨.
@@ -10,4 +11,4 @@ import { s2CoexistDecks, s2CoexistPacks } from './coexist'
  */
 export const s2Decks: Deck[] = [...s2Tier0Decks, ...s2Tier1Decks, ...s2Tier2Decks]
 
-export { s2CoexistDecks, s2CoexistPacks }
+export { s2CoexistDecks, s2CoexistPacks, s2PioneerDecks, s2PioneerGuides, s2PioneerLandGuide }

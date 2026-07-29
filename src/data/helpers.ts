@@ -91,6 +91,7 @@ export const GENERAL_META: Record<string, { faction: Faction; rarity: General['r
   손권: { faction: '오', rarity: 'SSR' },
   손견: { faction: '오', rarity: 'SSR' },
   손책: { faction: '오', rarity: 'SSR' },
+  태사자: { faction: '오', rarity: 'SSR' },
   손상향: { faction: '오', rarity: 'SSR' },
   주태: { faction: '오', rarity: 'SSR' },
   감녕: { faction: '오', rarity: 'SSR' },

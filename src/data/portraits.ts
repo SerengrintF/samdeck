@@ -38,6 +38,7 @@ export const GENERAL_SLUG: Record<string, string> = {
   손권: 'sunquan',
   손견: 'sunjian',
   손책: 'sunce',
+  태사자: 'taishici',
   손상향: 'sunshangxiang',
   주태: 'zhutai',
   감녕: 'ganming',

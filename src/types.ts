@@ -58,6 +58,8 @@ export interface Deck {
   name: string
   season: SeasonId
   tier: Tier
+  /** 일반 티어덱과 다른 전용 화면에서 사용하는 덱 분류 */
+  category?: 'pioneer'
   /** 진영(진형) — 예: 기형진, 어린진. 복수면 "기형진/방원진" */
   formation?: string
   members: [DeckMember, DeckMember, DeckMember]
@@ -72,6 +74,63 @@ export interface CoexistPack {
   id: string
   name: string
   decks: Deck[]
+}
+
+/** 개척덱의 장수 한 자리 — 장수 후보와 레벨별 육성 정보를 함께 표시 */
+export interface PioneerMemberGuide {
+  generalOptions: string[]
+  level10Skills: string[]
+  level20Skills: string[]
+  stat: string
+  equipment: string
+}
+
+/** 개척덱 전용 가이드 — variants는 상세 모달·저장에 사용하는 실제 3인 조합 */
+export interface PioneerDeckGuide {
+  id: string
+  name: string
+  season: SeasonId
+  formation: string
+  members: [PioneerMemberGuide, PioneerMemberGuide, PioneerMemberGuide]
+  variants: Deck[]
+  summary: string[]
+}
+
+/** 토지 레벨별 개척 진행 기준 한 줄 */
+export interface PioneerLandStep {
+  /** 목표 토지 (예: 5레벨 토지) */
+  land: string
+  /** 진입 조건 — 병력·전법·건물 등 */
+  requirement: string
+  /** 진행 목표 — 어디까지 올릴지 */
+  goal: string
+}
+
+/** 토지 레벨별 수비군 정보와 공략 난이도 */
+export interface PioneerLandDefense {
+  /** 목표 토지 (예: 5) */
+  land: string
+  /** 수비 무장 레벨 (예: 24레벨) */
+  generalLevel: string
+  /** 수비 병력 (예: 10,500 × 1) */
+  troops: string
+  /** 고유 전법 레벨 */
+  innateSkillLevel: string
+  /** 전법 1 레벨 */
+  skill1Level: string
+  /** 전법 2 레벨 — 예외가 있으면 설명까지 포함 */
+  skill2Level: string
+  /** 피해야 할 수비 조합 */
+  caution: string
+  /** 추천 공략 조합 */
+  recommend: string
+}
+
+/** 개척덱 하단 토지 육성 팁 */
+export interface PioneerLandGuide {
+  steps: PioneerLandStep[]
+  summary: string[]
+  defenses: PioneerLandDefense[]
 }
 
 export type SlotStatus = 'required' | 'alt' | 'unresolved'
