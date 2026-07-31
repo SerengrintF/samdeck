@@ -237,10 +237,10 @@ function setPage(page: NavPage): void {
 }
 
 function documentTitleForPage(): string {
-  if (state.view === 'set-result') return '세트 추천 · SamDeck'
+  if (state.view === 'set-result') return '세트 추천 · 삼국지 천하결전 | SamDeck'
   switch (state.page) {
     case 'guide':
-      return '사용 가이드 · SamDeck'
+      return '사용 가이드 · 삼국지 천하결전 덱 | SamDeck'
     case 'about':
       return '소개·면책 · SamDeck'
     case 'privacy':
@@ -248,11 +248,17 @@ function documentTitleForPage(): string {
     case 'contact':
       return '문의 · SamDeck'
     case 'roster':
-      return '장수 조합 · SamDeck'
+      return '장수 조합 · 삼국지 천하결전 | SamDeck'
     case 'mine':
-      return '나의 조합 · SamDeck'
+      return '나의 조합 · 삼국지 천하결전 | SamDeck'
     default:
-      return 'SamDeck · 천하결전 장수 조합'
+      if (state.recommendTab === 'pioneer') {
+        return '개척덱 · 삼국지 천하결전 | SamDeck'
+      }
+      if (state.recommendTab === 'coexist') {
+        return '공존덱 · 삼국지 천하결전 | SamDeck'
+      }
+      return '삼국지 천하결전 덱 · 장수 조합 | SamDeck'
   }
 }
 
@@ -1679,10 +1685,11 @@ function renderShellChrome(): string {
     </div>
 
     <header class="hero">
+      <h1 class="visually-hidden">삼국지 천하결전 덱 · 장수 조합 추천 | SamDeck</h1>
       <img
         class="hero__banner"
         src="${import.meta.env.BASE_URL}banners/hero.png"
-        alt="삼국지 천하결전"
+        alt="삼국지 천하결전 장수 조합 · SamDeck"
         width="1024"
         height="126"
         decoding="async"

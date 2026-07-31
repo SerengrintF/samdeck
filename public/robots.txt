@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://samdeck.xyz/sitemap.xml
