@@ -1,11 +1,14 @@
+import { renderAdSlot } from './ads'
 import { getSeasonCatalog } from './data/seasonCatalog'
 import { SEASONS } from './data/seasons'
+import { hrefForPage } from './router'
 import type { SeasonId } from './types'
 
-export type InfoPage = 'guide' | 'about' | 'privacy' | 'contact'
+export type InfoPage = 'guide' | 'meta' | 'about' | 'privacy' | 'contact'
 
 export const INFO_PAGES: Array<{ id: InfoPage; label: string }> = [
   { id: 'guide', label: '사용 가이드' },
+  { id: 'meta', label: '시즌 공략' },
   { id: 'about', label: '소개·면책' },
   { id: 'privacy', label: '개인정보처리방침' },
   { id: 'contact', label: '문의' },
@@ -38,6 +41,7 @@ function pageShell(title: string, updated: string, body: string): string {
       <div class="info-page__body prose">
         ${body}
       </div>
+      ${renderAdSlot()}
     </article>
   `
 }
@@ -45,12 +49,20 @@ function pageShell(title: string, updated: string, body: string): string {
 function renderGuide(): string {
   return pageShell(
     'SamDeck 사용 가이드',
-    '2026-07-24',
+    '2026-08-02',
     `
       <p>
         SamDeck은 <strong>삼국지 천하결전</strong>을 플레이하는 이용자가 보유 장수·전법을 기준으로
         <strong>서로 겹치지 않는 덱 세트</strong>를 빠르게 찾는 비공식 웹 도구입니다.
         이 페이지는 앱의 구성 규칙, 화면별 사용법, 시즌·티어 해석 방법을 정리한 원문 안내입니다.
+        시즌별 운용 관점은 <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>에서 더 자세히 다룹니다.
+      </p>
+
+      <p>
+        시즌 공략·사용 가이드는 각각
+        <a href="https://samdeck.xyz/season-guide">samdeck.xyz/season-guide</a>,
+        <a href="https://samdeck.xyz/guide">/guide</a>
+        주소로도 열 수 있습니다.
       </p>
 
       <h2>1. SamDeck이 해결하는 문제</h2>
@@ -80,6 +92,7 @@ function renderGuide(): string {
         시즌별로 등록된 덱을 0·1·2티어로 나눠 보여 줍니다.
         카드의 별점은 이용자 평점을 참고용으로 표시하며, 공식 밸런스 수치나 승률 보장이 아닙니다.
         관심 있는 덱은 「나의 조합」에 저장해 두고, 나중에 겹침 검사에 활용할 수 있습니다.
+        공존덱·개척덱 탭은 각각 “함께 굴리기 좋은 묶음”, “시즌 초반 육성”에 초점을 둡니다.
       </p>
       <h3>장수 조합</h3>
       <p>
@@ -141,6 +154,147 @@ function renderGuide(): string {
         같은 기기·같은 브라우저에서만 유지되며, 캐시를 지우면 초기화될 수 있습니다.
         이용자 평균 평점은 설정된 경우에 한해 서버 API로 집계됩니다.
       </p>
+
+      <h2>8. 자주 묻는 질문 (FAQ)</h2>
+      <h3>공식 티어와 같나요?</h3>
+      <p>
+        아닙니다. SamDeck 티어는 참고용 우선순위이며, 게임사 공식 랭킹·승률표를 복제하지 않습니다.
+        패치 이후에는 체감이 달라질 수 있으니 실전 피드백과 함께 보세요.
+      </p>
+      <h3>세트 추천이 비어 나와요</h3>
+      <p>
+        보유 장수가 너무 적거나, 전법 제한을 켠 상태에서 필수·대체 전법을 충분히 고르지 않은 경우가 많습니다.
+        전법 제한을 잠시 끄고 다시 계산해 본 뒤, 필요한 전법만 다시 켜는 방식이 진단에 유리합니다.
+      </p>
+      <h3>공존덱과 티어덱의 차이는?</h3>
+      <p>
+        티어덱은 개별 조합의 우선순위를 보여 주고, 공존덱은 “장수·전법이 겹치지 않게 같이 굴리기 좋은 묶음”을 중심으로 정리합니다.
+        계정당 여러 덱을 동시에 운영할 때 공존 탭을 먼저 보는 편이 빠릅니다.
+      </p>
+      <h3>개척덱은 언제 쓰나요?</h3>
+      <p>
+        시즌 초반 토지·병력 성장 구간에 맞춘 육성 가이드입니다.
+        후반 PvP 메타와는 목적이 다르므로, 개척이 끝난 뒤에는 티어·공존 후보로 전환하는 흐름을 권합니다.
+      </p>
+      <h3>데이터가 틀리거나 빠진 것 같아요</h3>
+      <p>
+        <a class="inline-nav" href="${hrefForPage('contact')}" data-nav="contact">문의</a>로 시즌·덱 이름·수정 내용을 알려 주세요.
+        확인 후 반영을 검토합니다.
+      </p>
+    `,
+  )
+}
+
+function renderMeta(): string {
+  return pageShell(
+    '시즌 공략 · 티어·공존·개척 해설',
+    '2026-08-02',
+    `
+      <p>
+        이 글은 SamDeck에 등록된 조합을 <strong>어떻게 읽고 골라 쓸지</strong>를 정리한 시즌 공략입니다.
+        카드 목록만으로는 알기 어려운 “왜 이 구성을 쓰는지”, “초반과 후반을 어떻게 나눌지”를
+        운영 관점에서 설명합니다. 승률을 보장하지 않으며, 계정 보유·숙련도에 맞게 조정하세요.
+      </p>
+
+      <h2>1. 티어를 실전에 옮기는 방법</h2>
+      <p>
+        <strong>0티어</strong>는 같은 시즌 안에서 범용으로 자주 거론되는 조합입니다.
+        첫 완성 세트를 짤 때 후보를 좁히는 출발점으로 쓰면 됩니다.
+        다만 핵심 장수·전법이 겹치면 0티어를 여러 개 동시에 굴릴 수 없으므로,
+        보유 현황을 기준으로 1·2티어 대체안을 함께 열어 두는 것이 중요합니다.
+      </p>
+      <p>
+        <strong>1티어</strong>는 특정 상성·진형·보유 조건에서 0티어만큼 힘을 내는 경우가 많습니다.
+        핵심 장수를 이미 0티어에 쓴 뒤 남는 자원으로 채울 때 특히 유용합니다.
+        <strong>2티어</strong>는 실험·취향·특정 콘텐츠용 후보로 두고,
+        평점·조합 팁·본인 숙련도를 보고 올리는 편이 안전합니다.
+      </p>
+      <p>
+        추천 순서의 예시는 다음과 같습니다.
+        (1) 시즌을 고른다 → (2) 보유 장수로 세트 추천을 돌린다 →
+        (3) 나온 세트 중 0티어 비중과 전법 부담을 본다 →
+        (4) 「나의 조합」에 넣고 겹침 검사로 확정한다.
+      </p>
+
+      <h2>2. 시즌 1 (S1)에서 자주 하는 실수</h2>
+      <p>
+        S1은 풀이 상대적으로 단순한 편이라, 인기 장수에 전법이 몰리면 세트가 한쪽으로 기울기 쉽습니다.
+        “강한 이름”만 모으기보다 <strong>겹치지 않는 역할 분배</strong>(돌파·유지·제어)를 먼저 보는 것이 좋습니다.
+        전법 제한을 켠 상태로 세트 추천이 비면, 대체 전법 풀에 있는 하위 호환 전법을 보유 목록에 넣었는지 확인하세요.
+      </p>
+      <p>
+        S1 티어표는 후속 시즌 패치와 별개로 유지됩니다.
+        시즌을 바꿔 비교할 때는 좌측 시즌 선택기를 사용하고, 보유·나의 조합이 시즌별로 분리된다는 점을 기억하세요.
+      </p>
+
+      <h2>3. 시즌 2 (S2 / 중국 S3) 운용 포인트</h2>
+      <p>
+        S2 카드에는 장비·가점·병종·병종 특화·덱 특징이 붙을 수 있습니다.
+        같은 장수 조합이라도 <strong>병종 특화와 가점 방향</strong>이 다르면 체감 템포가 달라지므로,
+        이름만 같을 때 상세 모달에서 장비·특화 줄을 한 번 더 확인하는 습관을 권합니다.
+      </p>
+      <p>
+        S2는 개척 구간과 중후반 운영의 온도 차가 큰 편입니다.
+        초반에는 개척덱 탭의 레벨별 전법·토지 팁을 따라 병력 손실을 줄이고,
+        기반이 나온 뒤에는 티어·공존 후보로 전환해 전법 투자를 재배치하는 흐름이 무난합니다.
+      </p>
+
+      <h2>4. 공존덱을 고르는 기준</h2>
+      <p>
+        공존덱은 “강한 단일 덱”보다 <strong>함께 굴렸을 때 자원이 안 겹치는 묶음</strong>이 핵심입니다.
+        세트 하나를 통째로 가져가되, 묶음 안에서 숙련도가 낮은 덱만 1·2티어 대체로 바꾸는 방식이 시행착오가 적습니다.
+        이미 「나의 조합」에 덱이 있다면 공존 묶음과 교차 검증해 중복 장수를 먼저 걷어 내세요.
+      </p>
+      <p>
+        공존 세트를 펼쳐 볼 때는 카드 수보다 <strong>전법 희소성</strong>을 봅니다.
+        인기 전법이 한 세트에 반복되면 실제 계정에서는 대체 전법으로 내려야 하므로,
+        전법 제한을 켠 장수 조합 추천으로 한 번 더 검증하는 것이 좋습니다.
+      </p>
+
+      <h2>5. 개척·토지 구간 팁</h2>
+      <p>
+        개척덱은 시즌 초반 토지 점령·병력 유지에 맞춘 육성 가이드입니다.
+        레벨 10/20 전법 표기는 “언제 어떤 스킬을 올리는지”를 맞추기 위한 참고이며,
+        후반 최종 빌드와 다를 수 있습니다. 토지 레벨별 진입 조건·수비군 정보는
+        무리한 돌파로 병력을 태우지 않기 위한 체크리스트로 쓰세요.
+      </p>
+      <ul>
+        <li>개척 구간에서는 손실을 줄이는 안정형 조합을 우선하고, 고비용 전법 확정은 미뤄도 됩니다.</li>
+        <li>토지 수비 조합 중 피해야 할 상성이 안내되어 있으면, 같은 날 연속 도전 전에 편성을 바꿉니다.</li>
+        <li>개척이 끝난 뒤에는 같은 장수를 티어/공존 기준으로 재배치해 전법 슬롯을 정리합니다.</li>
+      </ul>
+
+      <h2>6. 덱 운용을 단순화하는 체크리스트</h2>
+      <ol>
+        <li>이번 주에 쓸 주력 콘텐츠(개척 / 필드 / 경쟁)를 하나만 고른다.</li>
+        <li>주력에 맞는 탭(개척·티어·공존)에서 후보를 3개 이내로 줄인다.</li>
+        <li>보유 장수·전법으로 세트 추천을 돌려 실제 편성 가능 여부를 확인한다.</li>
+        <li>「나의 조합」에 넣고 겹침 검사 → 대체 전법·대체 덱을 적용한다.</li>
+        <li>실전 한두 판 후 평점·조합 팁을 남겨 다음에 고를 때 참고한다.</li>
+      </ol>
+
+      <h2>7. FAQ — 시즌 공략</h2>
+      <h3>0티어만 쓰면 되나요?</h3>
+      <p>
+        보유가 풍부하면 0티어 위주로도 세트가 나옵니다.
+        다만 핵심 자원이 겹치면 1·2티어를 섞는 편이 완성 5덱에 더 가깝습니다.
+      </p>
+      <h3>중국 서버 가이드와 숫자가 달라요</h3>
+      <p>
+        번역·명칭 정규화·시즌 매핑 과정에서 표기가 달라질 수 있고,
+        SamDeck은 국내 이용 맥락에 맞게 재정리한 참고 자료입니다. 절대 수치로 받아들이지 마세요.
+      </p>
+      <h3>광고는 어디에 나오나요?</h3>
+      <p>
+        읽을 본문이 있는 가이드·시즌 공략·소개·문의·개척 가이드 화면에만 광고를 둡니다.
+        장수 선택·빈 목록·알림만 있는 화면에는 광고 코드를 넣지 않습니다.
+      </p>
+      <p>
+        도구 사용법이 궁금하면
+        <a class="inline-nav" href="${hrefForPage('guide')}" data-nav="guide">사용 가이드</a>를,
+        운영·권리 관련은
+        <a class="inline-nav" href="${hrefForPage('about')}" data-nav="about">소개·면책</a>을 참고하세요.
+      </p>
     `,
   )
 }
@@ -148,7 +302,7 @@ function renderGuide(): string {
 function renderAbout(): string {
   return pageShell(
     '소개 · 면책 고지',
-    '2026-07-24',
+    '2026-08-02',
     `
       <p>
         <strong>SamDeck</strong>(samdeck.xyz)은 삼국지 천하결전 이용자를 위한
@@ -156,11 +310,20 @@ function renderAbout(): string {
         보유 자원으로 겹치지 않는 장수·전법 조합을 찾는 데 도움을 주는 것이 목적입니다.
       </p>
 
+      <h2>운영자</h2>
+      <p>
+        SamDeck은 개인 운영자가 기획·개발·데이터 정리·문서 작성까지 담당하는 소규모 팬 프로젝트입니다.
+        게임사 소속 또는 공식 파트너가 아니며, 수익·광고가 나더라도 공식 가이드를 대체하지 않습니다.
+        오류 제보·데이터 수정·권리 관련 연락은
+        <a class="inline-nav" href="${hrefForPage('contact')}" data-nav="contact">문의</a>
+        (<a href="mailto:serengrinf@gmail.com">serengrinf@gmail.com</a>)으로 보내 주세요.
+      </p>
+
       <h2>운영 목적</h2>
       <p>
         공식 클라이언트나 게임사 서비스를 대체하지 않습니다.
         시즌별 덱 후보를 한곳에 모아 두고, 보유 현황에 맞춘 세트 추천·겹침 검사·간단 평점 참고를 제공합니다.
-        UI와 추천 로직, 가이드 문서는 SamDeck에서 작성·유지보수합니다.
+        UI와 추천 로직, 가이드·시즌 공략 문서는 SamDeck에서 직접 작성·유지보수합니다.
       </p>
 
       <h2>비공식 고지 (중요)</h2>
@@ -169,6 +332,7 @@ function renderAbout(): string {
         <li>사이트에 등장하는 게임 명칭, 장수·전법·병법·진형 등의 명칭과 설정은 각 권리자에게 귀속될 수 있습니다.</li>
         <li>장수 초상·배너 등 이미지는 식별·안내용으로 쓰이며, SamDeck이 해당 자산의 권리를 주장하지 않습니다.</li>
         <li>본 사이트는 팬 커뮤니티용 참고 도구이며, 상업적 공식 가이드나 공식 티어표를 표방하지 않습니다.</li>
+        <li>광고·후원이 있더라도 추천 결과의 “공식성”을 의미하지 않습니다.</li>
       </ul>
 
       <h2>콘텐츠·추천에 대한 면책</h2>
@@ -185,7 +349,8 @@ function renderAbout(): string {
 
       <h2>지식재산권·신고</h2>
       <p>
-        권리 침해 우려가 있는 자료가 있다면 문의 페이지를 통해 알려 주세요.
+        권리 침해 우려가 있는 자료가 있다면 문의 페이지 또는
+        <a href="mailto:serengrinf@gmail.com">serengrinf@gmail.com</a>으로 알려 주세요.
         확인 후 수정·삭제 등 합리적인 조치를 검토합니다.
         SamDeck 고유의 UI 문구, 가이드 문서, 추천 로직 구현은 무단 복제를 금합니다.
       </p>
@@ -193,8 +358,19 @@ function renderAbout(): string {
       <h2>광고·분석</h2>
       <p>
         사이트 운영을 위해 Google Analytics 및 Google AdSense를 사용할 수 있습니다.
-        수집·이용에 대한 자세한 내용은 <strong>개인정보처리방침</strong>을 확인해 주세요.
+        광고는 <strong>본문이 있는 안내·공략 화면</strong>에 우선 배치하며,
+        로딩 중·빈 목록·알림만 있는 화면에는 두지 않도록 합니다.
+        수집·이용에 대한 자세한 내용은
+        <a class="inline-nav" href="${hrefForPage('privacy')}" data-nav="privacy">개인정보처리방침</a>을 확인해 주세요.
       </p>
+
+      <h2>문의 경로</h2>
+      <ul>
+        <li>일반·데이터·권리 문의:
+          <a class="inline-nav" href="${hrefForPage('contact')}" data-nav="contact">문의 페이지</a>
+        </li>
+        <li>이메일: <a href="mailto:serengrinf@gmail.com">serengrinf@gmail.com</a></li>
+      </ul>
     `,
   )
 }
@@ -202,7 +378,7 @@ function renderAbout(): string {
 function renderPrivacy(): string {
   return pageShell(
     '개인정보처리방침',
-    '2026-07-24',
+    '2026-08-02',
     `
       <p>
         SamDeck(이하 “사이트”)은 서비스 제공과 품질 개선, 광고 게재를 위해 아래와 같이
@@ -227,6 +403,8 @@ function renderPrivacy(): string {
       <h3>광고 (Google AdSense)</h3>
       <p>
         사이트는 Google AdSense(게시자 ID: <code>ca-pub-8530704724833439</code>)를 통해 광고를 게재할 수 있습니다.
+        광고 코드는 사용 가이드·시즌 공략·소개·개인정보·문의·개척 가이드처럼
+        <strong>게시자 본문이 있는 화면</strong>에 한해 로드·표시하는 것을 원칙으로 합니다.
         Google 및 파트너는 관심사 기반 광고 제공을 위해 쿠키·기기 식별자 등을 사용할 수 있습니다.
         광고 개인화 설정은 Google 광고 설정에서 변경할 수 있습니다.
       </p>
@@ -278,7 +456,9 @@ function renderPrivacy(): string {
 
       <h2>8. 문의</h2>
       <p>
-        개인정보 처리에 관한 문의는 사이트의 <strong>문의</strong> 페이지에 안내된 방법으로 연락해 주세요.
+        개인정보 처리에 관한 문의는 사이트의
+        <a class="inline-nav" href="${hrefForPage('contact')}" data-nav="contact">문의</a>
+        페이지 또는 <a href="mailto:serengrinf@gmail.com">serengrinf@gmail.com</a>으로 연락해 주세요.
       </p>
     `,
   )
@@ -287,14 +467,18 @@ function renderPrivacy(): string {
 function renderContact(): string {
   return pageShell(
     '문의',
-    '2026-07-24',
+    '2026-08-02',
     `
       <p>
         SamDeck 이용 중 오류 제보, 덱·데이터 수정 요청, 권리 관련 연락, 개인정보 문의는 아래 경로로 보내 주세요.
         가능한 범위에서 확인 후 반영하겠습니다.
       </p>
 
-      <h2>연락 방법</h2>
+      <h2>운영자 연락처</h2>
+      <p>
+        비공식 팬 사이트 SamDeck을 운영하는 개인 운영자에게 직접 연락할 수 있습니다.
+        공식 게임 고객센터가 아니므로, 계정·결제·제재 문의는 게임 공식 채널을 이용해 주세요.
+      </p>
       <ul>
         <li>
           <strong>e-mail</strong>:
@@ -304,7 +488,7 @@ function renderContact(): string {
 
       <h2>제보 시 알려 주시면 좋은 정보</h2>
       <ul>
-        <li>사용 중인 시즌(S1/S2 등)과 화면 이름(조합 추천, 장수 조합, 나의 조합)</li>
+        <li>사용 중인 시즌(S1/S2 등)과 화면 이름(조합 추천, 장수 조합, 나의 조합, 시즌 공략)</li>
         <li>문제가 된 덱 이름 또는 장수·전법 이름</li>
         <li>브라우저·기기(예: Chrome / Android)와 재현 순서</li>
         <li>권리 관련 요청인 경우: 대상 URL·자료 설명·요청 내용(수정/삭제 등)</li>
@@ -314,6 +498,8 @@ function renderContact(): string {
       <p>
         비공식 팬 도구 특성상 즉시 응대가 어려울 수 있습니다.
         게임 계정·결제·공식 고객센터 업무는 다루지 않으며, 해당 문의는 게임 공식 채널을 이용해 주세요.
+        소개·면책 내용은
+        <a class="inline-nav" href="${hrefForPage('about')}" data-nav="about">소개·면책</a>에서 확인할 수 있습니다.
       </p>
     `,
   )
@@ -323,11 +509,13 @@ export function renderInfoPage(id: InfoPage): string {
   const body =
     id === 'guide'
       ? renderGuide()
-      : id === 'about'
-        ? renderAbout()
-        : id === 'privacy'
-          ? renderPrivacy()
-          : renderContact()
+      : id === 'meta'
+        ? renderMeta()
+        : id === 'about'
+          ? renderAbout()
+          : id === 'privacy'
+            ? renderPrivacy()
+            : renderContact()
 
   return `<div class="page-body page-body--info">${body}</div>`
 }
@@ -335,7 +523,7 @@ export function renderInfoPage(id: InfoPage): string {
 export function renderSiteFooter(active: InfoPage | null): string {
   const links = INFO_PAGES.map((p) => {
     const cls = active === p.id ? 'site-footer__link is-active' : 'site-footer__link'
-    return `<button type="button" class="${cls}" data-nav="${p.id}">${p.label}</button>`
+    return `<a href="${hrefForPage(p.id)}" class="${cls}" data-nav="${p.id}">${p.label}</a>`
   }).join('<span class="site-footer__sep" aria-hidden="true">·</span>')
 
   return `
@@ -343,6 +531,7 @@ export function renderSiteFooter(active: InfoPage | null): string {
       <p class="site-footer__disclaimer">
         SamDeck은 삼국지 천하결전의 <strong>비공식 팬 제작 도구</strong>이며,
         게임 제작사·퍼블리셔와 무관합니다. 명칭·이미지 등 관련 권리는 각 권리자에게 있습니다.
+        문의: <a class="site-footer__mail" href="mailto:serengrinf@gmail.com">serengrinf@gmail.com</a>
       </p>
       <nav class="site-footer__nav" aria-label="사이트 정보">
         ${links}

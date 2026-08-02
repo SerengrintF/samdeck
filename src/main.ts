@@ -71,6 +71,17 @@ import type {
   Skill,
 } from './types'
 import { SET_SIZE } from './types'
+import { renderAdSlot, syncPublisherAds } from './ads'
+import {
+  absoluteUrl,
+  hrefForPage,
+  hrefForRecommendTab,
+  normalizePath,
+  pathFromRoute,
+  routeFromPath,
+  writeHistory,
+  type RouteSnapshot,
+} from './router'
 import {
   isInfoPage,
   renderInfoPage,
@@ -225,12 +236,58 @@ function scrollToTopInstant(): void {
   html.style.scrollBehavior = prev
 }
 
+function currentRoute(): RouteSnapshot {
+  return {
+    view: state.view,
+    page: state.page,
+    recommendTab: state.recommendTab,
+  }
+}
+
+function updateCanonicalLink(): void {
+  const link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!link) return
+  link.href = absoluteUrl(pathFromRoute(currentRoute()))
+}
+
+/** false while applying browser back/forward so we don't push a duplicate history entry */
+let applyingPopState = false
+
+function syncUrl(mode: 'push' | 'replace' = 'push'): void {
+  if (applyingPopState) return
+  const path = pathFromRoute(currentRoute())
+  if (normalizePath(location.pathname) === path) {
+    updateCanonicalLink()
+    return
+  }
+  writeHistory(path, mode)
+  updateCanonicalLink()
+}
+
+function applyLocationToState(): void {
+  const route = routeFromPath(location.pathname)
+  state.view = route.view
+  state.page = route.page
+  state.recommendTab = route.recommendTab
+  state.query = ''
+  if (route.page === 'roster' && !state.tab) state.tab = 'generals'
+  // 결과 URL로 직접 진입했는데 계산 결과가 없으면 장수 조합으로
+  if (route.view === 'set-result' && state.sets.length === 0) {
+    state.view = 'browse'
+    state.page = 'roster'
+  }
+}
+
 function setPage(page: NavPage): void {
   if (state.view === 'browse' && state.page === page) return
   state.view = 'browse'
   state.page = page
   state.query = ''
   if (page === 'roster' && !state.tab) state.tab = 'generals'
+  if (page === 'recommend' && !RECOMMEND_TABS.includes(state.recommendTab)) {
+    state.recommendTab = 'tier'
+  }
+  syncUrl()
   scrollToTopInstant()
   render()
   scrollToTopInstant()
@@ -241,6 +298,8 @@ function documentTitleForPage(): string {
   switch (state.page) {
     case 'guide':
       return '사용 가이드 · 삼국지 천하결전 덱 | SamDeck'
+    case 'meta':
+      return '시즌 공략 · 티어·공존·개척 | SamDeck'
     case 'about':
       return '소개·면책 · SamDeck'
     case 'privacy':
@@ -264,11 +323,14 @@ function documentTitleForPage(): string {
 
 /** 타이틀 로고 → 첫 화면(조합 추천) */
 function goHome(): void {
-  const alreadyHome = state.view === 'browse' && state.page === 'recommend'
+  const alreadyHome =
+    state.view === 'browse' && state.page === 'recommend' && state.recommendTab === 'tier'
   state.view = 'browse'
   state.page = 'recommend'
+  state.recommendTab = 'tier'
   state.query = ''
   state.detailDeckId = null
+  syncUrl(alreadyHome ? 'replace' : 'push')
   if (alreadyHome) {
     if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' })
     return
@@ -415,6 +477,7 @@ function switchTab(tab: RosterTab): void {
   state.page = 'roster'
   state.tab = tab
   state.query = ''
+  syncUrl()
   render()
 }
 
@@ -424,6 +487,7 @@ function switchRecommendTab(tab: RecommendTab): void {
   state.page = 'recommend'
   state.recommendTab = tab
   state.query = ''
+  syncUrl()
   scrollToTopInstant()
   render()
   scrollToTopInstant()
@@ -497,6 +561,7 @@ function runSetRecommend(): void {
   state.openSetId = sets[0]?.id ?? null
   state.page = 'roster'
   state.view = 'set-result'
+  syncUrl()
   render()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -504,6 +569,7 @@ function runSetRecommend(): void {
 function backToRoster(): void {
   state.view = 'browse'
   state.page = 'roster'
+  syncUrl()
   render()
 }
 
@@ -1596,39 +1662,39 @@ function renderShellChrome(): string {
     state.view === 'browse' && state.page === 'recommend' && state.recommendTab === 'tier'
 
   const recommendSub = `
-        <button
-          type="button"
+        <a
+          href="${hrefForRecommendTab('tier')}"
           class="global-nav__sub-btn ${state.recommendTab === 'tier' ? 'is-active' : ''}"
           data-recommend-tab="tier"
           tabindex="${showRecommendSub ? 0 : -1}"
-        >티어덱</button>
-        <button
-          type="button"
+        >티어덱</a>
+        <a
+          href="${hrefForRecommendTab('coexist')}"
           class="global-nav__sub-btn ${state.recommendTab === 'coexist' ? 'is-active' : ''}"
           data-recommend-tab="coexist"
           tabindex="${showRecommendSub ? 0 : -1}"
-        >공존덱</button>
-        <button
-          type="button"
+        >공존덱</a>
+        <a
+          href="${hrefForRecommendTab('pioneer')}"
           class="global-nav__sub-btn ${state.recommendTab === 'pioneer' ? 'is-active' : ''}"
           data-recommend-tab="pioneer"
           tabindex="${showRecommendSub ? 0 : -1}"
-        >개척덱</button>
+        >개척덱</a>
   `
 
   const rosterSub = `
-        <button
-          type="button"
+        <a
+          href="${hrefForPage('roster')}"
           class="global-nav__sub-btn ${state.view === 'browse' && state.tab === 'generals' ? 'is-active' : ''}"
           data-tab="generals"
           tabindex="${showRosterSub ? 0 : -1}"
-        >보유 장수</button>
-        <button
-          type="button"
+        >보유 장수</a>
+        <a
+          href="${hrefForPage('roster')}"
           class="global-nav__sub-btn ${state.view === 'browse' && state.tab === 'skills' ? 'is-active' : ''}"
           data-tab="skills"
           tabindex="${showRosterSub ? 0 : -1}"
-        >보유 전법</button>
+        >보유 전법</a>
   `
 
   return `
@@ -1698,21 +1764,21 @@ function renderShellChrome(): string {
 
     <nav class="global-nav" aria-label="주요 메뉴">
       <div class="global-nav__primary" role="tablist">
-        <button
-          type="button"
+        <a
+          href="${hrefForRecommendTab('tier')}"
           class="global-nav__btn ${navActive === 'recommend' ? 'is-active' : ''}"
           data-nav="recommend"
-        >조합 추천</button>
-        <button
-          type="button"
+        >조합 추천</a>
+        <a
+          href="${hrefForPage('roster')}"
           class="global-nav__btn ${navActive === 'roster' ? 'is-active' : ''}"
           data-nav="roster"
-        >장수 조합</button>
-        <button
-          type="button"
+        >장수 조합</a>
+        <a
+          href="${hrefForPage('mine')}"
           class="global-nav__btn ${navActive === 'mine' ? 'is-active' : ''}"
           data-nav="mine"
-        >나의 조합</button>
+        >나의 조합</a>
       </div>
       <div
         class="global-nav__sub ${showSub ? '' : 'is-hidden'}"
@@ -1751,11 +1817,23 @@ function renderTopRatedItem(deck: Deck, rank: number): string {
 
 function renderCatalogIntro(showTopRated = false): string {
   const top = showTopRated ? topRatedDecks(5) : []
+  const seasonMeta = getSeasonMeta(state.season)
   return `
     <section class="catalog-intro" aria-label="조합 안내">
-      <p class="catalog-intro__note">
-        중국 가이드 참고·번역 확인 중입니다. 공식 티어·승률을 보장하지 않으니 <strong>참고만</strong> 해주세요.
-      </p>
+      <div class="tool-intro">
+        <p class="tool-intro__lead">
+          ${seasonMeta.short} 티어는 <strong>참고용 우선순위</strong>입니다.
+        </p>
+        <ul class="tool-intro__list">
+          <li>0티어로 후보를 먼저 고릅니다.</li>
+          <li>보유에 맞춰 1·2티어로 빈자리를 채웁니다.</li>
+          <li>공식 티어·승률을 보장하지 않습니다.</li>
+        </ul>
+        <p class="tool-intro__note">
+          고르는 법 →
+          <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>
+        </p>
+      </div>
       ${
         showTopRated
           ? `<div class="top-rated">
@@ -1774,6 +1852,25 @@ function renderCatalogIntro(showTopRated = false): string {
           : ''
       }
     </section>
+  `
+}
+
+function renderToolOutro(): string {
+  return `
+    <aside class="tool-outro" aria-label="시즌 안내">
+      <h2 class="tool-outro__title">탭별 용도</h2>
+      <ul class="tool-outro__list">
+        <li><strong>티어</strong> — 세트 짤 때 쓰는 우선순위</li>
+        <li><strong>공존</strong> — 같이 굴리기 좋은 묶음</li>
+        <li><strong>개척</strong> — 시즌 초반 육성</li>
+      </ul>
+      <p class="tool-outro__body">
+        자세한 해설:
+        <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>
+        ·
+        <a class="inline-nav" href="${hrefForPage('guide')}" data-nav="guide">사용 가이드</a>
+      </p>
+    </aside>
   `
 }
 
@@ -2015,11 +2112,23 @@ function renderPioneerSection(): string {
         </div>
         <span class="pioneer-section__count">${guides.length} / 6</span>
       </div>
-      <p class="pioneer-section__hint">레벨별 전법과 육성 방향을 장수별로 비교해 보세요.</p>
+      <div class="tool-intro tool-intro--section">
+        <p class="tool-intro__lead">시즌 초반 <strong>토지·병력 육성</strong>용 조합입니다.</p>
+        <ul class="tool-intro__list">
+          <li>레벨별 전법 = 초반 투자 순서 참고</li>
+          <li>후반 최종 빌드와 다를 수 있습니다</li>
+          <li>개척이 끝나면 티어·공존으로 전환</li>
+        </ul>
+        <p class="tool-intro__note">
+          더 보기 →
+          <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>
+        </p>
+      </div>
       <div class="pioneer-guide-list">
         ${guides.map(renderPioneerGuide).join('')}
       </div>
       ${renderPioneerLandGuide(seasonPioneerLandGuide())}
+      ${renderAdSlot()}
     </section>
   `
 }
@@ -2113,7 +2222,21 @@ function renderRecommendPage(): string {
     }
     return `
       <div class="page-body page-body--recommend page-body--coexist">
+        <div class="tool-intro tool-intro--section">
+          <p class="tool-intro__lead">
+            <strong>같이 굴려도 겹치지 않는</strong> 덱 묶음입니다.
+          </p>
+          <ul class="tool-intro__list">
+            <li>세트 단위로 가져온 뒤</li>
+            <li>익숙하지 않은 덱만 티어 대체로 바꿉니다</li>
+          </ul>
+          <p class="tool-intro__note">
+            고르는 기준 →
+            <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>
+          </p>
+        </div>
         ${packs.map((pack) => renderCoexistPack(pack)).join('')}
+        ${renderToolOutro()}
       </div>
     `
   }
@@ -2162,6 +2285,7 @@ function renderRecommendPage(): string {
       ${section('0티어', 0, tier0)}
       ${section('1티어', 1, tier1)}
       ${section('2티어', 2, tier2)}
+      ${renderToolOutro()}
     </div>
   `
 }
@@ -2178,6 +2302,19 @@ function renderRosterPage(): string {
 
   return `
     <div class="page-body page-body--roster">
+      <div class="tool-intro tool-intro--section">
+        <p class="tool-intro__lead">
+          보유 장수를 고르면 <strong>최대 5덱</strong> 세트를 찾습니다.
+        </p>
+        <ul class="tool-intro__list">
+          <li>장수·전법이 서로 겹치지 않습니다</li>
+          <li>전법 제한 ON → 보유 전법만 사용</li>
+        </ul>
+        <p class="tool-intro__note">
+          사용법 →
+          <a class="inline-nav" href="${hrefForPage('guide')}" data-nav="guide">사용 가이드</a>
+        </p>
+      </div>
       <div class="toolbar">
         <label class="search">
           <span class="visually-hidden">검색</span>
@@ -2471,6 +2608,13 @@ function renderMinePage(): string {
   if (n === 0) {
     return `
       <div class="page-body page-body--mine">
+        <div class="tool-intro tool-intro--section">
+          <p class="tool-intro__lead">관심 덱을 모아 두는 저장함입니다.</p>
+          <ul class="tool-intro__list">
+            <li>브라우저에만 저장됩니다</li>
+            <li>시즌마다 목록이 따로입니다</li>
+          </ul>
+        </div>
         <div class="empty-hint empty-hint--lg">
           <p>저장한 조합이 없습니다.</p>
           <p class="empty-hint__sub">조합 추천 또는 장수 조합 결과에서 「나의 조합 추가」를 눌러 보세요. (최대 ${MAX_MY_COMBOS}개)</p>
@@ -2481,6 +2625,13 @@ function renderMinePage(): string {
 
   return `
     <div class="page-body page-body--mine">
+      <div class="tool-intro tool-intro--section">
+        <p class="tool-intro__lead">저장한 덱의 <strong>장수·전법 겹침</strong>을 검사합니다.</p>
+        <ul class="tool-intro__list">
+          <li>겹치면 대체 덱·전법을 제안합니다</li>
+          <li>최종 편성 전에 한 번 검사하세요</li>
+        </ul>
+      </div>
       <header class="result-hero">
         <div class="result-hero__row">
           <h1 class="result-hero__title">나의 조합 <strong>${n}/${MAX_MY_COMBOS}</strong></h1>
@@ -2712,23 +2863,32 @@ function bindShell(): void {
 
   document.querySelector('#site-brand-btn')?.addEventListener('click', goHome)
 
-  document.querySelectorAll<HTMLButtonElement>('[data-nav]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const page = btn.dataset.nav as NavPage | undefined
-      if (page) setPage(page)
+  document.querySelectorAll<HTMLElement>('[data-nav]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (el instanceof HTMLAnchorElement) e.preventDefault()
+      const page = el.dataset.nav as NavPage | undefined
+      if (!page) return
+      // 조합 추천 메인 탭 → 항상 티어덱(/)으로
+      if (page === 'recommend') {
+        switchRecommendTab('tier')
+        return
+      }
+      setPage(page)
     })
   })
 
-  document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const tab = (btn.dataset.tab as RosterTab) ?? 'generals'
+  document.querySelectorAll<HTMLElement>('[data-tab]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (el instanceof HTMLAnchorElement) e.preventDefault()
+      const tab = (el.dataset.tab as RosterTab) ?? 'generals'
       switchTab(tab)
     })
   })
 
-  document.querySelectorAll<HTMLButtonElement>('[data-recommend-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.recommendTab as RecommendTab | undefined
+  document.querySelectorAll<HTMLElement>('[data-recommend-tab]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (el instanceof HTMLAnchorElement) e.preventDefault()
+      const tab = el.dataset.recommendTab as RecommendTab | undefined
       if (tab && RECOMMEND_TABS.includes(tab)) switchRecommendTab(tab)
     })
   })
@@ -2772,6 +2932,7 @@ function bindSetResult(): void {
 
 function render(): void {
   document.title = documentTitleForPage()
+  updateCanonicalLink()
   app.innerHTML = `
     <main class="page page--with-dock">
       ${renderShellChrome()}
@@ -2784,6 +2945,26 @@ function render(): void {
   else if (state.page === 'roster') bindRoster()
   else if (state.page === 'recommend') bindRecommend()
   else if (state.page === 'mine') bindMine()
+  syncPublisherAds({
+    view: state.view,
+    page: state.page,
+    recommendTab: state.recommendTab,
+    pioneerHasGuides: seasonPioneerGuides().length > 0,
+  })
 }
+
+applyLocationToState()
+{
+  const path = pathFromRoute(currentRoute())
+  if (normalizePath(location.pathname) !== path) writeHistory(path, 'replace')
+  updateCanonicalLink()
+}
+window.addEventListener('popstate', () => {
+  applyingPopState = true
+  applyLocationToState()
+  scrollToTopInstant()
+  render()
+  applyingPopState = false
+})
 
 render()

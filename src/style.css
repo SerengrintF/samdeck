@@ -172,6 +172,9 @@ body::before {
   font-family: var(--font-display);
   font-size: 0.92rem;
   font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
@@ -216,6 +219,8 @@ body::before {
   font-weight: 600;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  text-decoration: none;
+  text-align: center;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
@@ -251,6 +256,148 @@ body::before {
 .catalog-intro__note strong {
   color: var(--gold-soft);
   font-weight: 650;
+}
+
+.tool-intro {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(201, 162, 39, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 36rem;
+}
+
+.tool-intro--section {
+  margin: 0 0 18px;
+}
+
+.tool-intro__lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.tool-intro__lead strong {
+  color: var(--gold-soft);
+  font-weight: 650;
+}
+
+.tool-intro__list {
+  margin: 0;
+  padding: 0 0 0 1.15em;
+  list-style: disc;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.tool-intro__list li {
+  margin: 0.15em 0;
+}
+
+.tool-intro__list li::marker {
+  color: var(--gold);
+}
+
+.tool-intro__note {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.tool-outro {
+  margin: 28px 0 8px;
+  padding: 16px 14px;
+  border-top: 1px solid var(--line);
+  max-width: 36rem;
+}
+
+.tool-outro__title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.03em;
+}
+
+.tool-outro__list {
+  margin: 0 0 10px;
+  padding: 0 0 0 1.15em;
+  list-style: disc;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.tool-outro__list li {
+  margin: 0.2em 0;
+}
+
+.tool-outro__list strong {
+  color: var(--gold-soft);
+  font-weight: 650;
+}
+
+.tool-outro__body {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.inline-nav {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gold-soft);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.inline-nav:hover {
+  color: var(--gold);
+}
+
+.publisher-ad {
+  margin: 28px 0 8px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.publisher-ad__label {
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.publisher-ad__frame {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.site-footer__mail {
+  color: var(--gold-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-footer__mail:hover {
+  color: var(--gold);
 }
 
 .top-rated__head {
@@ -1637,6 +1784,14 @@ html.modal-open body {
 }
 
 .prose a:hover {
+  color: var(--gold);
+}
+
+.prose .inline-nav {
+  color: var(--gold-soft);
+}
+
+.prose .inline-nav:hover {
   color: var(--gold);
 }
 

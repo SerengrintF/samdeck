@@ -134,7 +134,7 @@ export const s1Tier1Decks: Deck[] = [
     name: '조운·유비·제갈량',
     season: 'S1',
     tier: 1,
-    formation: '기형진',
+    formation: '어린진',
     members: [
       mem(
         '조운',
