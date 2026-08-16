@@ -117,15 +117,15 @@ const huanggaiSunquanZhouyu: Deck = {
   feature:
     '상태 이상 연계로 주유의 연전연승을 여러 번 발동시키는 안정형 개척 조합. 20레벨 이후 6레벨 땅 공략에 적합.',
   members: [
-    mem('황개', '견고한 방어', '적군 굴복', [], ['', '', ''], {
+    mem('황개', '견고한 방어', '적군 굴복', ['난공불락', '청야전술'], ['', '', ''], {
       equip: '통선',
       main: '선공',
     }),
-    mem('손권', '예측의 신', '청낭 치료', ['칠군수몰'], ['', '', ''], {
+    mem('손권', '청낭 치료', '예측의 신', ['칠군수몰', '결정적인 수'], ['', '', ''], {
       equip: '통선',
       main: '선공',
     }),
-    mem('주유', '기정상생', '연전연승', [], ['', '', ''], {
+    mem('주유', '연전연승', '음과 양', ['충신의 기재', '출기불의'], ['', '', ''], {
       equip: '지통',
       main: '지력',
     }),
@@ -171,11 +171,11 @@ function createPioneer6Variant(
 ): Deck {
   const midSkills =
     mid === '장비'
-      ? mem('장비', '천하평론', '칠군수몰', ['예측의 신'], ['', '', ''], {
+      ? mem('장비', '칠군수몰', '천하평론', ['예측의 신'], ['', '', ''], {
           equip: '무선',
           main: '선공',
         })
-      : mem('법정', '천하평론', '예측의 신', ['칠군수몰'], ['', '', ''], {
+      : mem('법정', '예측의 신', '천하평론', ['칠군수몰'], ['', '', ''], {
           equip: '무선',
           main: '선공',
         })
@@ -191,12 +191,12 @@ function createPioneer6Variant(
     feature:
       '전열 결사의 다짐과 중열 디버프로 마초의 공격 횟수·화력을 끌어올리는 개척 조합.',
     members: [
-      mem(front, '결사의 다짐', '허점 공략', ['철벽성채'], ['', '', ''], {
+      mem(front, '허점 공략', '결사의 다짐', ['철벽성채'], ['', '', ''], {
         equip: '지통',
         main: '지력',
       }),
       midSkills,
-      mem('마초', '난관 돌파', '파죽지세', ['찬란한 위명'], ['', '', ''], {
+      mem('마초', '요새함락', '파죽지세', ['난관 돌파', '찬란한 위명'], ['', '', ''], {
         equip: '무선',
         main: '무력',
       }),
@@ -334,22 +334,22 @@ export const s2PioneerGuides: PioneerDeckGuide[] = [
     members: [
       {
         generalOptions: ['황개'],
-        level10Skills: ['견고한 방어'],
+        level10Skills: ['견고한 방어', '난공불락', '청야전술'],
         level20Skills: ['적군 굴복'],
         stat: '선공 2순위 + 통솔',
         equipment: '선공',
       },
       {
         generalOptions: ['손권'],
-        level10Skills: ['예측의 신', '칠군수몰'],
-        level20Skills: ['청낭 치료'],
+        level10Skills: ['청낭 치료'],
+        level20Skills: ['예측의 신', '칠군수몰', '결정적인 수'],
         stat: '선공 1순위 + 통솔',
         equipment: '선공 / 지력',
       },
       {
         generalOptions: ['주유'],
-        level10Skills: ['기정상생'],
-        level20Skills: ['연전연승'],
+        level10Skills: ['연전연승', '충신의 기재'],
+        level20Skills: ['음과 양', '출기불의'],
         stat: '지력',
         equipment: '지력 / 선공',
       },
@@ -403,21 +403,21 @@ export const s2PioneerGuides: PioneerDeckGuide[] = [
     members: [
       {
         generalOptions: ['유비', '황월영'],
-        level10Skills: ['결사의 다짐'],
-        level20Skills: ['허점 공략', '철벽성채'],
+        level10Skills: ['허점 공략', '철벽성채'],
+        level20Skills: ['결사의 다짐'],
         stat: '지력',
         equipment: '지력 / 선공',
       },
       {
         generalOptions: ['장비', '법정'],
-        level10Skills: ['천하평론'],
-        level20Skills: ['칠군수몰', '예측의 신'],
+        level10Skills: ['칠군수몰', '예측의 신'],
+        level20Skills: ['천하평론'],
         stat: '선공 · 무력',
         equipment: '무력 / 통솔',
       },
       {
         generalOptions: ['마초'],
-        level10Skills: ['난관 돌파'],
+        level10Skills: ['요새함락', '난관 돌파'],
         level20Skills: ['파죽지세', '찬란한 위명'],
         stat: '무력',
         equipment: '무력 / 통솔',

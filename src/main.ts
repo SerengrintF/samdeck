@@ -72,6 +72,7 @@ import type {
 } from './types'
 import { SET_SIZE } from './types'
 import { renderAdSlot, syncPublisherAds } from './ads'
+import { renderHubPage } from './hub'
 import {
   absoluteUrl,
   hrefForPage,
@@ -89,9 +90,9 @@ import {
   type InfoPage,
 } from './sitePages'
 
-type AppPage = 'recommend' | 'roster' | 'mine'
+type AppPage = 'hub' | 'recommend' | 'roster' | 'mine'
 type NavPage = AppPage | InfoPage
-const APP_PAGES: AppPage[] = ['recommend', 'roster', 'mine']
+const APP_PAGES: AppPage[] = ['hub', 'recommend', 'roster', 'mine']
 type RosterTab = 'generals' | 'skills'
 type RecommendTab = 'tier' | 'coexist' | 'pioneer'
 const RECOMMEND_TABS: RecommendTab[] = ['tier', 'coexist', 'pioneer']
@@ -110,7 +111,7 @@ const initialSeason = loadSeason()
 
 const state = {
   view: 'browse' as AppView,
-  page: 'recommend' as NavPage,
+  page: 'hub' as NavPage,
   tab: 'generals' as RosterTab,
   recommendTab: 'tier' as RecommendTab,
   season: initialSeason,
@@ -310,6 +311,8 @@ function documentTitleForPage(): string {
       return '장수 조합 · 삼국지 천하결전 | SamDeck'
     case 'mine':
       return '나의 조합 · 삼국지 천하결전 | SamDeck'
+    case 'hub':
+      return '삼국지 천하결전 덱 고르는 법 | SamDeck'
     default:
       if (state.recommendTab === 'pioneer') {
         return '개척덱 · 삼국지 천하결전 | SamDeck'
@@ -321,13 +324,11 @@ function documentTitleForPage(): string {
   }
 }
 
-/** 타이틀 로고 → 첫 화면(조합 추천) */
+/** 타이틀 로고 → 홈 허브 */
 function goHome(): void {
-  const alreadyHome =
-    state.view === 'browse' && state.page === 'recommend' && state.recommendTab === 'tier'
+  const alreadyHome = state.view === 'browse' && state.page === 'hub'
   state.view = 'browse'
-  state.page = 'recommend'
-  state.recommendTab = 'tier'
+  state.page = 'hub'
   state.query = ''
   state.detailDeckId = null
   syncUrl(alreadyHome ? 'replace' : 'push')
@@ -1765,6 +1766,11 @@ function renderShellChrome(): string {
     <nav class="global-nav" aria-label="주요 메뉴">
       <div class="global-nav__primary" role="tablist">
         <a
+          href="${hrefForPage('hub')}"
+          class="global-nav__btn ${navActive === 'hub' ? 'is-active' : ''}"
+          data-nav="hub"
+        >홈</a>
+        <a
           href="${hrefForRecommendTab('tier')}"
           class="global-nav__btn ${navActive === 'recommend' ? 'is-active' : ''}"
           data-nav="recommend"
@@ -2705,6 +2711,21 @@ function renderSetResultPage(): string {
 function renderPageBody(): string {
   if (state.view === 'set-result') return renderSetResultPage()
   if (isInfoPage(state.page)) return renderInfoPage(state.page)
+  if (state.page === 'hub') {
+    const seasonMeta = getSeasonMeta(state.season)
+    return renderHubPage({
+      season: state.season,
+      seasonLabel: seasonMeta.label,
+      seasonShort: seasonMeta.short,
+      decks: seasonDecks(),
+      landGuide: seasonPioneerLandGuide(),
+      tierHref: hrefForRecommendTab('tier'),
+      rosterHref: hrefForPage('roster'),
+      pioneerHref: hrefForRecommendTab('pioneer'),
+      guideHref: hrefForPage('guide'),
+      metaHref: hrefForPage('meta'),
+    })
+  }
   if (state.page === 'recommend') return renderRecommendPage()
   if (state.page === 'mine') return renderMinePage()
   return renderRosterPage()
@@ -2868,7 +2889,7 @@ function bindShell(): void {
       if (el instanceof HTMLAnchorElement) e.preventDefault()
       const page = el.dataset.nav as NavPage | undefined
       if (!page) return
-      // 조합 추천 메인 탭 → 항상 티어덱(/)으로
+      // 조합 추천 메인 탭 → 항상 티어덱(/tier)으로
       if (page === 'recommend') {
         switchRecommendTab('tier')
         return

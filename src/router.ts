@@ -1,7 +1,7 @@
 /** Path-based routes for crawlable AdSense content URLs. */
 
 export type AppView = 'browse' | 'set-result'
-export type AppPage = 'recommend' | 'roster' | 'mine'
+export type AppPage = 'hub' | 'recommend' | 'roster' | 'mine'
 export type InfoPageId = 'guide' | 'meta' | 'about' | 'privacy' | 'contact'
 export type NavPage = AppPage | InfoPageId
 export type RecommendTab = 'tier' | 'coexist' | 'pioneer'
@@ -41,11 +41,13 @@ export function pathFromRoute(route: RouteSnapshot): string {
       return '/roster'
     case 'mine':
       return '/mine'
+    case 'hub':
+      return '/'
     case 'recommend':
     default:
       if (route.recommendTab === 'coexist') return '/coexist'
       if (route.recommendTab === 'pioneer') return '/pioneer'
-      return '/'
+      return '/tier'
   }
 }
 
@@ -83,11 +85,12 @@ export function routeFromPath(pathname: string): RouteSnapshot {
       return { view: 'browse', page: 'recommend', recommendTab: 'coexist' }
     case '/pioneer':
       return { view: 'browse', page: 'recommend', recommendTab: 'pioneer' }
-    case '/':
-    case '/recommend':
     case '/tier':
-    default:
+    case '/recommend':
       return { view: 'browse', page: 'recommend', recommendTab: 'tier' }
+    case '/':
+    default:
+      return { view: 'browse', page: 'hub', recommendTab: 'tier' }
   }
 }
 

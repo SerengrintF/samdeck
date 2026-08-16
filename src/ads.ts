@@ -15,6 +15,7 @@ export type AdsContext = {
 export function isAdsAllowedPage(ctx: AdsContext): boolean {
   if (ctx.view !== 'browse') return false
   if (
+    ctx.page === 'hub' ||
     ctx.page === 'guide' ||
     ctx.page === 'meta' ||
     ctx.page === 'about' ||

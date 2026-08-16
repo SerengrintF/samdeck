@@ -159,18 +159,18 @@ body::before {
 
 .global-nav__primary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
 .global-nav__btn {
-  padding: 12px 8px;
+  padding: 12px 6px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-dim);
   font-family: var(--font-display);
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   font-weight: 600;
   text-decoration: none;
   text-align: center;
@@ -1714,6 +1714,182 @@ html.modal-open body {
   font-size: 0.95rem;
   color: var(--text-dim);
   line-height: 1.5;
+}
+
+/* —— Home hub —— */
+.page-body--hub {
+  padding-top: 4px;
+}
+
+.hub__header {
+  margin: 0 0 16px;
+}
+
+.hub__kicker {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--gold-soft);
+}
+
+.hub__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4vw, 1.7rem);
+  font-weight: 700;
+  color: var(--gold-soft);
+  letter-spacing: 0.04em;
+}
+
+.hub__prose {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.hub__prose p {
+  margin: 0 0 0.9em;
+}
+
+.hub-block {
+  margin: 28px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.hub-block__title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.hub-block__lead {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+.hub-rank {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hub-rank__row {
+  display: grid;
+  grid-template-columns: 1.6rem 48px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.hub-rank__pos {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--gold-soft);
+  text-align: center;
+}
+
+.hub-rank__portrait,
+.hub-rank__fallback {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.hub-rank__fallback {
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--gold-soft);
+  font-weight: 700;
+}
+
+.hub-rank__meta {
+  min-width: 0;
+}
+
+.hub-rank__name {
+  display: block;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.hub-rank__bar {
+  display: block;
+  margin-top: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(201, 162, 39, 0.12);
+  overflow: hidden;
+}
+
+.hub-rank__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--gold);
+}
+
+.hub-rank__row--skill {
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+}
+
+.hub-rank__name--t2 {
+  color: #c4b5fd;
+}
+
+.hub-tips {
+  margin: 0;
+  padding: 0 0 0 1.15em;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.hub-tips li {
+  margin: 0.35em 0;
+}
+
+.hub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 28px 0 8px;
+}
+
+.hub-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.hub-actions__btn:hover {
+  border-color: var(--gold);
+  color: var(--gold-soft);
+}
+
+.hub-actions__btn--primary {
+  border-color: var(--gold);
+  background: linear-gradient(160deg, rgba(158, 27, 27, 0.5), var(--surface-2));
+  color: var(--text);
 }
 
 /* —— Info pages (guide / legal) —— */
@@ -3512,6 +3688,29 @@ html.modal-open body {
   .combo-card__portrait {
     width: 64px;
     height: 64px;
+  }
+
+  .hub-rank__row {
+    grid-template-columns: 1.4rem 40px minmax(0, 1fr);
+  }
+
+  .hub-rank__row--skill {
+    grid-template-columns: 1.4rem minmax(0, 1fr);
+  }
+
+  .hub-rank__row--skill .hub-rank__stat {
+    grid-column: 2;
+  }
+
+  .hub-rank__portrait,
+  .hub-rank__fallback {
+    width: 40px;
+    height: 40px;
+  }
+
+  .hub-rank__stat {
+    grid-column: 3;
+    justify-self: start;
   }
 }
 
