@@ -115,7 +115,7 @@ const huanggaiSunquanZhouyu: Deck = {
   formation: '기형진',
   note: '개척덱 4',
   feature:
-    '상태 이상 연계로 주유의 승전 강화를 여러 번 발동시키는 안정형 개척 조합. 20레벨 이후 6레벨 땅 공략에 적합.',
+    '상태 이상 연계로 주유의 연전연승을 여러 번 발동시키는 안정형 개척 조합. 20레벨 이후 6레벨 땅 공략에 적합.',
   members: [
     mem('황개', '견고한 방어', '적군 굴복', [], ['', '', ''], {
       equip: '통선',
@@ -125,7 +125,7 @@ const huanggaiSunquanZhouyu: Deck = {
       equip: '통선',
       main: '선공',
     }),
-    mem('주유', '기정상생', '승전 강화', [], ['', '', ''], {
+    mem('주유', '기정상생', '연전연승', [], ['', '', ''], {
       equip: '지통',
       main: '지력',
     }),
@@ -349,7 +349,7 @@ export const s2PioneerGuides: PioneerDeckGuide[] = [
       {
         generalOptions: ['주유'],
         level10Skills: ['기정상생'],
-        level20Skills: ['승전 강화'],
+        level20Skills: ['연전연승'],
         stat: '지력',
         equipment: '지력 / 선공',
       },
@@ -357,7 +357,7 @@ export const s2PioneerGuides: PioneerDeckGuide[] = [
     variants: [huanggaiSunquanZhouyu],
     summary: [
       '20레벨 전까지는 유관장 등 다른 개척 조합으로 밀고, 20레벨 이후 이 조합으로 6레벨 땅을 공략하는 것을 추천합니다.',
-      '상태 이상 연계가 핵심입니다. 아군이 먼저 제어를 걸면 주유의 승전 강화가 여러 번 발동해 후반 화력이 매우 높습니다.',
+      '상태 이상 연계가 핵심입니다. 아군이 먼저 제어를 걸면 주유의 연전연승이 여러 번 발동해 후반 화력이 매우 높습니다.',
       '속도가 빠른 폭발형 적지는 피하세요. 황개·손권이 살아 있으면 감피·제어·화력이 모두 갖춰진 안정적인 개척 조합입니다.',
     ],
   },
