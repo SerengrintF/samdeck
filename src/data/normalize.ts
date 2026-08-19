@@ -87,6 +87,8 @@ const ALIASES: Record<string, string> = {
   '기문 둔갑': '기문둔갑',
   동주공제: '일심협력',
   철벽성채: '금성의 철벽',
+  '문과 양': '문과 무',
+  문과양: '문과 무',
 }
 
 const CJK = /[\u4e00-\u9fff]/

@@ -132,6 +132,34 @@ body::before {
   justify-self: center;
 }
 
+.top-bar__support-btn {
+  grid-column: 3;
+  justify-self: end;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--gold-soft);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.top-bar__support-btn:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.top-bar__support-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 .page--with-dock {
   padding-bottom: calc(var(--dock-h) + 28px);
 }
@@ -1703,6 +1731,125 @@ body::before {
   color: var(--gold-soft);
 }
 
+.support-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.support-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 7, 5, 0.72);
+}
+
+.support-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  max-height: min(88dvh, 720px);
+  overflow: auto;
+  padding: 20px 18px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.support-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.support-modal__close:hover {
+  color: var(--gold-soft);
+  background: rgba(201, 162, 39, 0.12);
+}
+
+.support-modal__title {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gold-soft);
+  letter-spacing: 0.04em;
+}
+
+.support-modal__lead {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text);
+  text-align: left;
+}
+
+.support-modal__note {
+  margin: 0 0 16px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  text-align: left;
+}
+
+.support-modal__link-btn {
+  display: inline-block;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, rgba(158, 27, 27, 0.45), var(--surface-2));
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.support-modal__link-btn:hover {
+  border-color: var(--gold-soft);
+  background: linear-gradient(160deg, rgba(158, 27, 27, 0.6), var(--surface));
+}
+
+.support-modal__qr {
+  margin: 0;
+}
+
+.support-modal__qr img {
+  display: block;
+  width: min(200px, 56vw);
+  height: auto;
+  margin: 0 auto 10px;
+  border-radius: 10px;
+  background: #f5f5f5;
+}
+
+.support-modal__qr figcaption {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
 html.modal-open,
 html.modal-open body {
   overflow: hidden;
@@ -2967,6 +3114,46 @@ html.modal-open body {
 
 .mine-fix__btn:hover {
   filter: brightness(1.08);
+}
+
+.mine-fill {
+  margin: 8px 0 20px;
+  padding: 14px 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.mine-fill__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.mine-fill__title span {
+  color: var(--gold-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.mine-fill__lead {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.mine-fill__lead strong {
+  color: var(--text);
+}
+
+.mine-fill__empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-dim);
 }
 
 .save-combo-btn.is-disabled,

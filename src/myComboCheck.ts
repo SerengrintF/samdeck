@@ -572,3 +572,68 @@ export function suggestReplacements(
 
   return out
 }
+
+export interface RemainingSuggestion {
+  /** 남은 칸을 채우는 무겹침 추천 묶음 */
+  pack: DeckMatch[]
+  /** 다음에 넣을 수 있는 개별 후보 */
+  extras: DeckMatch[]
+}
+
+function matchSort(a: DeckMatch, b: DeckMatch): number {
+  return (
+    a.deck.tier - b.deck.tier ||
+    a.altUsedCount - b.altUsedCount ||
+    a.deck.name.localeCompare(b.deck.name, 'ko')
+  )
+}
+
+/**
+ * 나의 조합이 5덱 미만일 때, 이미 고른 덱과 장수·전법이 안 겹치는 나머지를 찾습니다.
+ */
+export function suggestRemainingDecks(
+  combos: SavedCombo[],
+  catalog: Deck[],
+  nameOf: NameFn,
+  generalName: NameFn,
+  targetSize = MAX_MY_COMBOS,
+  extraLimit = 8,
+): RemainingSuggestion {
+  const remaining = targetSize - combos.length
+  if (remaining <= 0 || combos.length === 0) return { pack: [], extras: [] }
+
+  const savedIds = new Set(combos.map((c) => c.deckId))
+  const { generals, skills } = usedByCombos(combos)
+
+  const fitNow: DeckMatch[] = []
+  for (const deck of catalog) {
+    if (savedIds.has(deck.id)) continue
+    const fitted = tryFitAgainstUsed(deck, generals, skills, nameOf, generalName)
+    if (fitted) fitNow.push(fitted)
+  }
+  fitNow.sort(matchSort)
+
+  const pack: DeckMatch[] = []
+  const usedG = new Set(generals)
+  const usedS = new Set(skills)
+  const usedDeckIds = new Set(savedIds)
+
+  while (pack.length < remaining) {
+    let picked: DeckMatch | null = null
+    for (const deck of catalog) {
+      if (usedDeckIds.has(deck.id)) continue
+      const fitted = tryFitAgainstUsed(deck, usedG, usedS, nameOf, generalName)
+      if (!fitted) continue
+      if (!picked || matchSort(fitted, picked) < 0) picked = fitted
+    }
+    if (!picked) break
+    pack.push(picked)
+    usedDeckIds.add(picked.deck.id)
+    for (const m of picked.members) usedG.add(m.generalId)
+    for (const sid of picked.usedSkillIds) usedS.add(sid)
+  }
+
+  const packIds = new Set(pack.map((p) => p.deck.id))
+  const extras = fitNow.filter((d) => !packIds.has(d.deck.id)).slice(0, extraLimit)
+  return { pack, extras }
+}

@@ -39,9 +39,11 @@ import {
   MAX_MY_COMBOS,
   checkMyCombos,
   suggestReplacements,
+  suggestRemainingDecks,
   planSkillFixes,
   applySkillToCombo,
   type ComboCheckResult,
+  type RemainingSuggestion,
   type ReplacementSuggestion,
   type SkillFixPlan,
 } from './myComboCheck'
@@ -72,6 +74,7 @@ import type {
 } from './types'
 import { SET_SIZE } from './types'
 import { renderAdSlot, syncPublisherAds } from './ads'
+import { bindSupportButton, closeSupportModal, renderSupportButton } from './support'
 import { renderHubPage } from './hub'
 import {
   absoluteUrl,
@@ -136,6 +139,7 @@ const state = {
   myCombos: loadMyCombos(initialSeason),
   comboCheck: null as ComboCheckResult | null,
   comboReplacements: [] as ReplacementSuggestion[],
+  comboFillers: { pack: [], extras: [] } as RemainingSuggestion,
   skillFixPlan: null as SkillFixPlan | null,
 }
 
@@ -223,6 +227,7 @@ function setSeason(id: SeasonId): void {
   state.openSetId = null
   state.comboCheck = null
   state.comboReplacements = []
+  state.comboFillers = { pack: [], extras: [] }
   state.skillFixPlan = null
   state.view = 'browse'
   saveSeason(id)
@@ -893,6 +898,41 @@ function applyReplacement(targetDeckId: string, altDeckId: string): void {
   }
   saveMyCombos(state.myCombos, state.season)
   runMyComboCheck()
+}
+
+function refreshComboFillers(): RemainingSuggestion {
+  if (state.myCombos.length === 0 || state.myCombos.length >= MAX_MY_COMBOS) {
+    state.comboFillers = { pack: [], extras: [] }
+    return state.comboFillers
+  }
+  state.comboFillers = suggestRemainingDecks(
+    state.myCombos,
+    seasonDecks(),
+    skillName,
+    generalName,
+  )
+  return state.comboFillers
+}
+
+function applyFillDeck(deckId: string): void {
+  if (state.myCombos.length >= MAX_MY_COMBOS) return
+  if (state.myCombos.some((c) => c.deckId === deckId)) return
+  const alt = [...state.comboFillers.pack, ...state.comboFillers.extras].find(
+    (a) => a.deck.id === deckId,
+  )
+  if (!alt) return
+  state.myCombos.push(
+    createSavedCombo({
+      deck: alt.deck,
+      members: alt.members,
+      altUsedCount: alt.altUsedCount,
+    }),
+  )
+  state.comboCheck = null
+  state.comboReplacements = []
+  state.skillFixPlan = null
+  saveMyCombos(state.myCombos, state.season)
+  render()
 }
 
 function renderSaveComboBtn(deckId: string): string {
@@ -1749,6 +1789,7 @@ function renderShellChrome(): string {
           decoding="async"
         />
       </button>
+      ${renderSupportButton()}
     </div>
 
     <header class="hero">
@@ -2609,6 +2650,51 @@ function renderMineReplacePanel(deckId: string): string {
   `
 }
 
+function renderFillDeckRow(alt: DeckMatch, btnLabel: string): string {
+  const formation = alt.deck.formation?.trim() ?? ''
+  const altNote = alt.altUsedCount ? ` · 대체 ${alt.altUsedCount}` : ''
+  return `
+    <li class="mine-fix__row">
+      <div class="mine-fix__meta">
+        ${renderDeckCategoryBadge(alt.deck)}
+        ${formation ? `<span class="formation-badge">${formation}</span>` : ''}
+        <strong class="mine-fix__name">${alt.deck.name}</strong>
+        <span class="mine-fix__note">${altNote}</span>
+      </div>
+      <button type="button" class="mine-fix__btn" data-apply-fill="${alt.deck.id}">${btnLabel}</button>
+    </li>
+  `
+}
+
+function renderMineFillPanel(): string {
+  const n = state.myCombos.length
+  if (n === 0 || n >= MAX_MY_COMBOS) return ''
+
+  const { pack, extras } = refreshComboFillers()
+  const need = MAX_MY_COMBOS - n
+  const packHtml =
+    pack.length === 0
+      ? `<p class="mine-fill__empty">저장한 조합과 장수·전법이 안 겹치는 덱이 없습니다.</p>`
+      : `<ul class="mine-fix__list">${pack.map((d) => renderFillDeckRow(d, '추가')).join('')}</ul>`
+  const extraHtml =
+    extras.length === 0
+      ? ''
+      : `
+        <p class="mine-fix__label mine-fix__label--alts">다른 후보</p>
+        <ul class="mine-fix__list">${extras.map((d) => renderFillDeckRow(d, '추가')).join('')}</ul>
+      `
+
+  return `
+    <section class="mine-fill">
+      <h2 class="mine-fill__title">나머지 덱 추천 <span>${need}칸</span></h2>
+      <p class="mine-fill__lead">지금 저장한 조합과 <strong>장수·전법이 겹치지 않는</strong> 덱입니다. 0티어를 우선하고, 묶음끼리는 서로도 안 겹칩니다.</p>
+      ${pack.length > 0 ? `<p class="mine-fix__label">함께 굴리기 추천</p>` : ''}
+      ${packHtml}
+      ${extraHtml}
+    </section>
+  `
+}
+
 function renderMinePage(): string {
   const n = state.myCombos.length
   if (n === 0) {
@@ -2617,8 +2703,9 @@ function renderMinePage(): string {
         <div class="tool-intro tool-intro--section">
           <p class="tool-intro__lead">관심 덱을 모아 두는 저장함입니다.</p>
           <ul class="tool-intro__list">
-            <li>브라우저에만 저장됩니다</li>
-            <li>시즌마다 목록이 따로입니다</li>
+          <li>브라우저에만 저장됩니다</li>
+          <li>시즌마다 목록이 따로입니다</li>
+          <li>5개 미만이면 안 겹치는 나머지를 추천합니다</li>
           </ul>
         </div>
         <div class="empty-hint empty-hint--lg">
@@ -2635,7 +2722,7 @@ function renderMinePage(): string {
         <p class="tool-intro__lead">저장한 덱의 <strong>장수·전법 겹침</strong>을 검사합니다.</p>
         <ul class="tool-intro__list">
           <li>겹치면 대체 덱·전법을 제안합니다</li>
-          <li>최종 편성 전에 한 번 검사하세요</li>
+          <li>5개 미만이면 안 겹치는 나머지를 추천합니다</li>
         </ul>
       </div>
       <header class="result-hero">
@@ -2664,6 +2751,7 @@ function renderMinePage(): string {
           })
           .join('')}
       </div>
+      ${renderMineFillPanel()}
     </div>
   `
 }
@@ -2757,6 +2845,12 @@ function bindMine(): void {
       const target = btn.dataset.applyReplace
       const alt = btn.dataset.altDeck
       if (target && alt) applyReplacement(target, alt)
+    })
+  })
+  document.querySelectorAll<HTMLButtonElement>('[data-apply-fill]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.applyFill
+      if (id) applyFillDeck(id)
     })
   })
   document.querySelectorAll<HTMLButtonElement>('[data-skill-swap]').forEach((btn) => {
@@ -2878,11 +2972,13 @@ function bindSeasonSelect(): void {
 
 function bindShell(): void {
   closeDeckModal()
+  closeSupportModal()
   bindSeasonSelect()
   bindTopRatedStrip()
   void hydrateSeasonRatings()
 
   document.querySelector('#site-brand-btn')?.addEventListener('click', goHome)
+  bindSupportButton(closeDeckModal)
 
   document.querySelectorAll<HTMLElement>('[data-nav]').forEach((el) => {
     el.addEventListener('click', (e) => {
