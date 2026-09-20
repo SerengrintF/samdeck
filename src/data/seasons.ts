@@ -15,7 +15,7 @@ export interface SeasonMeta {
 export const SEASONS: SeasonMeta[] = [
   { id: 'S1', label: '시즌 1', short: 'S1', enabled: true },
   { id: 'S2', label: '시즌 2 (중국 S3)', short: 'S2 (중국 S3)', enabled: true },
-  { id: 'S3', label: '시즌 3', short: 'S3', enabled: false },
+  { id: 'S3', label: '시즌 3', short: 'S3', enabled: true },
 ]
 
 export const DEFAULT_SEASON: SeasonId = 'S1'

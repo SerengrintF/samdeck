@@ -83,6 +83,32 @@ export function tierSkillRanks(decks: Deck[]): HubRank[] {
 }
 
 function seasonIntro(season: SeasonId, seasonLabel: string, deckCount: number): string {
+  if (season === 'S3') {
+    if (deckCount === 0) {
+      return `
+      <p>
+        ${seasonLabel} 화면을 열었습니다. 장수·티어덱·공존·개척 데이터는 순차 등록합니다.
+        시즌 선택기에서 S3를 고른 채 홈·조합 추천·장수 조합·나의 조합을 쓰면 됩니다.
+        보유 장수와 나의 조합은 시즌마다 따로 저장됩니다.
+      </p>
+      <p>
+        티어덱이 올라오면 아래 순위에 장수·전법 출현 비율이 채워집니다.
+        지금은 목록이 비어 있어도 페이지 구성은 S1·S2와 같습니다.
+      </p>
+    `
+    }
+    return `
+      <p>
+        ${seasonLabel}은 초반 개척과 중후반 티어 운영을 나눠 보는 시즌입니다.
+        토지·병력을 먼저 안정적으로 올린 뒤, 보유 장수에 맞춰 티어덱·공존 세트로 전법을 재배치하세요.
+      </p>
+      <p>
+        아래 순위는 현재 등록된 티어덱 <strong>${deckCount}개</strong>에서
+        각 장수가 <strong>몇 개의 덱에 들어가는지</strong>를 계산한 참고 자료입니다.
+        공식 승률이 아니며, 핵심 장수가 겹치면 1·2티어로 빈자리를 채우면 됩니다.
+      </p>
+    `
+  }
   if (season === 'S2') {
     return `
       <p>
@@ -190,7 +216,7 @@ export function renderHubPage(opts: {
           </p>
           ${
             ranks.length === 0
-              ? `<p class="empty-hint">이 시즌에 등록된 티어덱이 없습니다.</p>`
+              ? `<p class="empty-hint">${opts.season === 'S3' ? '시즌 3 티어덱이 아직 없습니다. 장수·조합 데이터가 등록되면 출현 순위가 표시됩니다.' : '이 시즌에 등록된 티어덱이 없습니다.'}</p>`
               : `<ol class="hub-rank">${ranks.map(rankRow).join('')}</ol>`
           }
         </section>
@@ -203,7 +229,7 @@ export function renderHubPage(opts: {
           </p>
           ${
             skillRanks.length === 0
-              ? `<p class="empty-hint">표시할 전법이 없습니다.</p>`
+              ? `<p class="empty-hint">${opts.season === 'S3' ? '시즌 3 전법 순위는 티어덱이 등록되면 채워집니다.' : '표시할 전법이 없습니다.'}</p>`
               : `<ol class="hub-rank hub-rank--skills">${skillRanks.map(skillRankRow).join('')}</ol>`
           }
         </section>

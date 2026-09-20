@@ -219,6 +219,7 @@ function setSeason(id: SeasonId): void {
   state.ownedSkills = loadOwnedSkills(id)
   state.trackSkills = loadTrackSkills(id)
   state.myCombos = loadMyCombos(id)
+  state.query = ''
   state.tierExpanded = { 0: false, 1: false, 2: false }
   state.coexistExpanded = {}
   state.sets = []
@@ -361,6 +362,21 @@ function filteredSkills(): Skill[] {
     if (q && !s.name.toLowerCase().includes(q) && !s.id.includes(q)) return false
     return true
   })
+}
+
+/** 티어덱 검색 — 덱 이름·장수·진형·특징 */
+function deckMatchesQuery(deck: Deck, rawQuery: string): boolean {
+  const q = rawQuery.trim().toLowerCase()
+  if (!q) return true
+  if (deck.name.toLowerCase().includes(q)) return true
+  if (deck.formation?.toLowerCase().includes(q)) return true
+  if (deck.feature?.toLowerCase().includes(q)) return true
+  if (deck.note?.toLowerCase().includes(q)) return true
+  for (const m of deck.members) {
+    const name = generalName(m.generalId).toLowerCase()
+    if (name.includes(q) || m.generalId.toLowerCase().includes(q)) return true
+  }
+  return false
 }
 
 function ownedInSeasonCount(): number {
@@ -1864,26 +1880,10 @@ function renderTopRatedItem(deck: Deck, rank: number): string {
 
 function renderCatalogIntro(showTopRated = false): string {
   const top = showTopRated ? topRatedDecks(5) : []
-  const seasonMeta = getSeasonMeta(state.season)
+  if (!showTopRated) return ''
   return `
-    <section class="catalog-intro" aria-label="조합 안내">
-      <div class="tool-intro">
-        <p class="tool-intro__lead">
-          ${seasonMeta.short} 티어는 <strong>참고용 우선순위</strong>입니다.
-        </p>
-        <ul class="tool-intro__list">
-          <li>0티어로 후보를 먼저 고릅니다.</li>
-          <li>보유에 맞춰 1·2티어로 빈자리를 채웁니다.</li>
-          <li>공식 티어·승률을 보장하지 않습니다.</li>
-        </ul>
-        <p class="tool-intro__note">
-          고르는 법 →
-          <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>
-        </p>
-      </div>
-      ${
-        showTopRated
-          ? `<div class="top-rated">
+    <section class="catalog-intro" aria-label="평점 TOP">
+      <div class="top-rated">
         <div class="top-rated__head">
           <h2 class="top-rated__title">평점 TOP 5</h2>
           <span class="top-rated__hint">좌우로 넘겨 보세요</span>
@@ -1895,9 +1895,7 @@ function renderCatalogIntro(showTopRated = false): string {
                 ${top.map((d, i) => renderTopRatedItem(d, i + 1)).join('')}
               </div>`
         }
-      </div>`
-          : ''
-      }
+      </div>
     </section>
   `
 }
@@ -2145,7 +2143,7 @@ function renderPioneerSection(): string {
     return `
       <section class="pioneer-section">
         <h2 class="pioneer-section__title">개척덱 가이드</h2>
-        <p class="empty-hint">등록된 개척덱이 없습니다.</p>
+        <p class="empty-hint">${state.season === 'S3' ? '시즌 3 개척덱은 아직 없습니다. 초반 육성 가이드는 장수 데이터 이후에 채웁니다.' : '등록된 개척덱이 없습니다.'}</p>
       </section>
     `
   }
@@ -2262,7 +2260,7 @@ function renderRecommendPage(): string {
             <div class="coexist-pack__head">
               <h2 class="coexist-pack__title">공존덱</h2>
             </div>
-            <p class="empty-hint">등록된 공존덱이 없습니다.</p>
+            <p class="empty-hint">${state.season === 'S3' ? '시즌 3 공존덱은 아직 없습니다. 티어덱 데이터가 올라온 뒤 등록됩니다.' : '등록된 공존덱이 없습니다.'}</p>
           </section>
         </div>
       `
@@ -2289,23 +2287,27 @@ function renderRecommendPage(): string {
   }
 
   const list = seasonDecks()
-  const tier0 = list.filter((d) => d.tier === 0)
-  const tier1 = list.filter((d) => d.tier === 1)
-  const tier2 = list.filter((d) => d.tier === 2)
+  const q = state.query.trim()
+  const searching = q.length > 0
+  const tier0 = list.filter((d) => d.tier === 0 && deckMatchesQuery(d, q))
+  const tier1 = list.filter((d) => d.tier === 1 && deckMatchesQuery(d, q))
+  const tier2 = list.filter((d) => d.tier === 2 && deckMatchesQuery(d, q))
+  const matchTotal = tier0.length + tier1.length + tier2.length
 
   const section = (title: string, tier: 0 | 1 | 2, items: Deck[]) => {
+    if (searching && items.length === 0) return ''
     if (items.length === 0) {
       return `
         <section class="tier-section">
           <h2 class="tier-section__title">${title}</h2>
-          <p class="empty-hint">등록된 조합이 없습니다.</p>
+          <p class="empty-hint">${state.season === 'S3' ? '시즌 3 조합은 준비 중입니다. 장수 데이터를 받으면 여기에 채워집니다.' : '등록된 조합이 없습니다.'}</p>
         </section>
       `
     }
-    const expanded = state.tierExpanded[tier]
+    const expanded = searching || state.tierExpanded[tier]
     const visible = expanded ? items : items.slice(0, COMBO_PREVIEW)
     const rest = items.length - visible.length
-    const canCollapse = expanded && items.length > COMBO_PREVIEW
+    const canCollapse = !searching && expanded && items.length > COMBO_PREVIEW
     return `
       <section class="tier-section" data-tier-section="${tier}">
         <h2 class="tier-section__title">${title} <span class="tier-section__count">${items.length}</span></h2>
@@ -2313,15 +2315,17 @@ function renderRecommendPage(): string {
           ${visible.map((d) => renderComboCard(d)).join('')}
         </div>
         ${
-          rest > 0
-            ? `<button type="button" class="tier-more-btn" data-expand-tier="${tier}">
-                더보기 <span class="tier-more-btn__rest">+${rest}</span>
-              </button>`
-            : canCollapse
-              ? `<button type="button" class="tier-more-btn tier-more-btn--collapse" data-collapse-tier="${tier}">
-                  간소화 <span class="tier-more-btn__rest">${COMBO_PREVIEW}개만</span>
+          searching
+            ? ''
+            : rest > 0
+              ? `<button type="button" class="tier-more-btn" data-expand-tier="${tier}">
+                  더보기 <span class="tier-more-btn__rest">+${rest}</span>
                 </button>`
-              : ''
+              : canCollapse
+                ? `<button type="button" class="tier-more-btn tier-more-btn--collapse" data-collapse-tier="${tier}">
+                    간소화 <span class="tier-more-btn__rest">${COMBO_PREVIEW}개만</span>
+                  </button>`
+                : ''
         }
       </section>
     `
@@ -2329,9 +2333,30 @@ function renderRecommendPage(): string {
 
   return `
     <div class="page-body page-body--recommend">
-      ${section('0티어', 0, tier0)}
+      <div class="toolbar toolbar--deck-search">
+        <label class="search">
+          <span class="visually-hidden">티어덱 검색</span>
+          <input
+            type="search"
+            id="deck-search-input"
+            placeholder="장수·조합·진형 검색"
+            value="${state.query.replaceAll('"', '&quot;')}"
+            autocomplete="off"
+          />
+        </label>
+        ${
+          searching
+            ? `<p class="toolbar__meta toolbar__meta--search">검색 결과 <strong>${matchTotal}</strong>개</p>`
+            : ''
+        }
+      </div>
+      ${
+        searching && matchTotal === 0
+          ? `<p class="empty-hint empty-hint--lg">검색 결과가 없습니다.</p>`
+          : `${section('0티어', 0, tier0)}
       ${section('1티어', 1, tier1)}
-      ${section('2티어', 2, tier2)}
+      ${section('2티어', 2, tier2)}`
+      }
       ${renderToolOutro()}
     </div>
   `
@@ -2868,6 +2893,25 @@ function bindMine(): void {
 
 function bindRecommend(): void {
   const root = document.querySelector('.page-body--recommend') ?? document
+
+  const search = document.querySelector<HTMLInputElement>('#deck-search-input')
+  let searchTimer = 0
+  search?.addEventListener('input', () => {
+    state.query = search.value
+    window.clearTimeout(searchTimer)
+    searchTimer = window.setTimeout(() => {
+      const y = window.scrollY
+      const start = search.selectionStart
+      const end = search.selectionEnd
+      render()
+      window.scrollTo(0, y)
+      const next = document.querySelector<HTMLInputElement>('#deck-search-input')
+      if (next) {
+        next.focus()
+        if (start != null && end != null) next.setSelectionRange(start, end)
+      }
+    }, 120)
+  })
 
   root.querySelectorAll<HTMLButtonElement>('[data-deck-id]').forEach((btn) => {
     btn.addEventListener('click', () => {

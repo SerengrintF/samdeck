@@ -2366,6 +2366,21 @@ html.modal-open body {
   margin-bottom: 22px;
 }
 
+.toolbar--deck-search {
+  margin-bottom: 18px;
+}
+
+.toolbar__meta--search {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+.toolbar__meta--search strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .search input {
   width: 100%;
   padding: 14px 16px;
