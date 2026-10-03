@@ -7,7 +7,7 @@ import { portraitSrc } from './data/portraits'
 import { displaySkillName } from './data/normalize'
 import { formatAttrChips } from './data/zhKoAttrs'
 import { skillTier } from './data/skillTiers'
-import { SEASONS, getSeasonMeta } from './data/seasons'
+import { SEASONS, getSeasonMeta, isAllSeasons } from './data/seasons'
 import { findDeckSets } from './recommend'
 import {
   fetchDeckRatings,
@@ -67,6 +67,7 @@ import type {
   MemberBuild,
   PioneerDeckGuide,
   PioneerLandDefense,
+  PioneerLandDifficulty,
   PioneerLandGuide,
   PioneerMemberGuide,
   SeasonId,
@@ -330,8 +331,30 @@ function documentTitleForPage(): string {
   }
 }
 
-/** 타이틀 로고 → 홈 허브 */
+/** 연무에는 홈 허브가 없어서 조합 추천 티어덱으로 보낸다 */
+function redirectHubInAllSeasons(): void {
+  if (!isAllSeasons(state.season) || state.view !== 'browse' || state.page !== 'hub') return
+  state.page = 'recommend'
+  state.recommendTab = 'tier'
+  syncUrl('replace')
+}
+
+/** 타이틀 로고 → 홈 허브 (연무는 티어덱) */
 function goHome(): void {
+  if (isAllSeasons(state.season)) {
+    const alreadyThere =
+      state.view === 'browse' && state.page === 'recommend' && state.recommendTab === 'tier'
+    state.view = 'browse'
+    state.page = 'recommend'
+    state.recommendTab = 'tier'
+    state.query = ''
+    state.detailDeckId = null
+    syncUrl(alreadyThere ? 'replace' : 'push')
+    scrollToTopInstant()
+    render()
+    scrollToTopInstant()
+    return
+  }
   const alreadyHome = state.view === 'browse' && state.page === 'hub'
   state.view = 'browse'
   state.page = 'hub'
@@ -1102,6 +1125,7 @@ function renderComboCard(deck: Deck, opts?: { rank?: number }): string {
       <button type="button" class="combo-card__main" data-deck-id="${deck.id}">
         <div class="combo-card__meta">
           ${rankHtml}
+          ${isAllSeasons(state.season) ? `<span class="season-badge">${deck.season}</span>` : ''}
           ${renderDeckCategoryBadge(deck)}
           ${formation ? `<span class="formation-badge">${formation}</span>` : ''}
           ${renderTipBadge(deck.id)}
@@ -1821,12 +1845,16 @@ function renderShellChrome(): string {
     </header>
 
     <nav class="global-nav" aria-label="주요 메뉴">
-      <div class="global-nav__primary" role="tablist">
-        <a
+      <div class="global-nav__primary ${isAllSeasons(state.season) ? 'global-nav__primary--no-home' : ''}" role="tablist">
+        ${
+          isAllSeasons(state.season)
+            ? ''
+            : `<a
           href="${hrefForPage('hub')}"
           class="global-nav__btn ${navActive === 'hub' ? 'is-active' : ''}"
           data-nav="hub"
-        >홈</a>
+        >홈</a>`
+        }
         <a
           href="${hrefForRecommendTab('tier')}"
           class="global-nav__btn ${navActive === 'recommend' ? 'is-active' : ''}"
@@ -2152,23 +2180,9 @@ function renderPioneerSection(): string {
     <section class="pioneer-section">
       <div class="pioneer-section__intro">
         <div>
-          <span class="pioneer-section__kicker">시즌 초반 육성 가이드</span>
+          ${state.season === 'S3' ? '' : '<span class="pioneer-section__kicker">시즌 초반 육성 가이드</span>'}
           <h1 class="pioneer-section__title">개척덱 &amp; 토지 육성 팁</h1>
-        </div>
-        <span class="pioneer-section__count">${guides.length} / 6</span>
-      </div>
-      <div class="tool-intro tool-intro--section">
-        <p class="tool-intro__lead">시즌 초반 <strong>토지·병력 육성</strong>용 조합입니다.</p>
-        <ul class="tool-intro__list">
-          <li>레벨별 전법 = 초반 투자 순서 참고</li>
-          <li>후반 최종 빌드와 다를 수 있습니다</li>
-          <li>개척이 끝나면 티어·공존으로 전환</li>
-        </ul>
-        <p class="tool-intro__note">
-          더 보기 →
-          <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>
-        </p>
-      </div>
+        </div>      </div>
       <div class="pioneer-guide-list">
         ${guides.map(renderPioneerGuide).join('')}
       </div>
@@ -2180,13 +2194,16 @@ function renderPioneerSection(): string {
 
 function renderPioneerLandGuide(guide: PioneerLandGuide | null): string {
   if (!guide) return ''
+  const hasSteps = guide.steps.length > 0
   return `
     <section class="pioneer-land">
       <header class="pioneer-land__head">
         <span class="pioneer-land__eyebrow">LAND</span>
-        <h2 class="pioneer-land__title">토지 육성 팁</h2>
+        <h2 class="pioneer-land__title">${hasSteps ? '토지 육성 팁' : '토지 수비군 난이도'}</h2>
       </header>
-      <p class="pioneer-land__hint">토지 레벨별 진입 조건과 목표입니다.</p>
+      ${
+        hasSteps
+          ? `<p class="pioneer-land__hint">토지 레벨별 진입 조건과 목표입니다.</p>
       <ol class="pioneer-land__steps">
         ${guide.steps
           .map(
@@ -2201,13 +2218,77 @@ function renderPioneerLandGuide(guide: PioneerLandGuide | null): string {
             `,
           )
           .join('')}
-      </ol>
-      <div class="pioneer-land__summary">
+      </ol>`
+          : ''
+      }
+      ${
+        guide.summary.length > 0
+          ? `<div class="pioneer-land__summary">
         <strong>개척 요령</strong>
         <ul>${guide.summary.map((line) => `<li>${line}</li>`).join('')}</ul>
-      </div>
+      </div>`
+          : ''
+      }
+      ${guide.difficulty ? renderPioneerDifficulty(guide.difficulty) : ''}
       ${renderPioneerDefenses(guide.defenses)}
     </section>
+  `
+}
+
+function renderPioneerDifficulty(difficulty: PioneerLandDifficulty): string {
+  const group = (kind: string, label: string, items: string[]) => `
+    <div class="land-diff__group land-diff__group--${kind}">
+      <span class="land-diff__label">${label}</span>
+      ${
+        items.length > 0
+          ? `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`
+          : '<p class="land-diff__none">—</p>'
+      }
+    </div>
+  `
+  return `
+    <div class="land-diff">
+      <div class="land-diff__notice">
+        ${difficulty.notice.map((line) => `<p>${line}</p>`).join('')}
+      </div>
+      <div class="land-diff__list">
+        ${difficulty.rows
+          .map(
+            (row) => `
+              <article class="land-diff__row">
+                <header class="land-diff__head">
+                  <span class="land-diff__land">${row.land}레벨</span>
+                  <span class="land-diff__deck">최적 부대 <strong>${row.bestDeck}</strong></span>
+                </header>
+                <div class="land-diff__levels">
+                  <span class="land-diff__levels-title">추천 레벨</span>
+                  <ul>
+                    <li><span>풀돌</span><strong>${row.levels.full}</strong></li>
+                    <li><span>중·고돌</span><strong>${row.levels.mid}</strong></li>
+                    <li><span>저돌·명함</span><strong>${row.levels.low}</strong></li>
+                  </ul>
+                </div>
+                ${
+                  row.overview
+                    ? `<p class="land-diff__overview">${row.overview}</p>`
+                    : `<div class="land-diff__groups">
+                  ${group('first', '첫 공략 추천', row.first)}
+                  ${group('easy', '쉬움', row.easy)}
+                  ${group('normal', '보통', row.normal)}
+                  ${group('hard', '어려움', row.hard)}
+                </div>`
+                }
+                ${
+                  row.notes.length > 0
+                    ? `<ul class="land-diff__notes">${row.notes.map((n) => `<li>${n}</li>`).join('')}</ul>`
+                    : ''
+                }
+              </article>
+            `,
+          )
+          .join('')}
+      </div>
+    </div>
   `
 }
 
@@ -2267,25 +2348,36 @@ function renderRecommendPage(): string {
     }
     return `
       <div class="page-body page-body--recommend page-body--coexist">
-        <div class="tool-intro tool-intro--section">
-          <p class="tool-intro__lead">
-            <strong>같이 굴려도 겹치지 않는</strong> 덱 묶음입니다.
-          </p>
-          <ul class="tool-intro__list">
-            <li>세트 단위로 가져온 뒤</li>
-            <li>익숙하지 않은 덱만 티어 대체로 바꿉니다</li>
-          </ul>
-          <p class="tool-intro__note">
-            고르는 기준 →
-            <a class="inline-nav" href="${hrefForPage('meta')}" data-nav="meta">시즌 공략</a>
-          </p>
-        </div>
         ${packs.map((pack) => renderCoexistPack(pack)).join('')}
         ${renderToolOutro()}
       </div>
     `
   }
 
+  const { metaHtml, resultsHtml } = renderTierDeckResults()
+
+  return `
+    <div class="page-body page-body--recommend">
+      <div class="toolbar toolbar--deck-search">
+        <label class="search">
+          <span class="visually-hidden">티어덱 검색</span>
+          <input
+            type="search"
+            id="deck-search-input"
+            placeholder="장수·조합·진형 검색"
+            value="${state.query.replaceAll('"', '&quot;')}"
+            autocomplete="off"
+          />
+        </label>
+        <div id="deck-search-meta">${metaHtml}</div>
+      </div>
+      <div id="tier-deck-results">${resultsHtml}</div>
+      ${renderToolOutro()}
+    </div>
+  `
+}
+
+function renderTierDeckResults(): { metaHtml: string; resultsHtml: string } {
   const list = seasonDecks()
   const q = state.query.trim()
   const searching = q.length > 0
@@ -2331,35 +2423,16 @@ function renderRecommendPage(): string {
     `
   }
 
-  return `
-    <div class="page-body page-body--recommend">
-      <div class="toolbar toolbar--deck-search">
-        <label class="search">
-          <span class="visually-hidden">티어덱 검색</span>
-          <input
-            type="search"
-            id="deck-search-input"
-            placeholder="장수·조합·진형 검색"
-            value="${state.query.replaceAll('"', '&quot;')}"
-            autocomplete="off"
-          />
-        </label>
-        ${
-          searching
-            ? `<p class="toolbar__meta toolbar__meta--search">검색 결과 <strong>${matchTotal}</strong>개</p>`
-            : ''
-        }
-      </div>
-      ${
-        searching && matchTotal === 0
-          ? `<p class="empty-hint empty-hint--lg">검색 결과가 없습니다.</p>`
-          : `${section('0티어', 0, tier0)}
+  const metaHtml = searching
+    ? `<p class="toolbar__meta toolbar__meta--search">검색 결과 <strong>${matchTotal}</strong>개</p>`
+    : ''
+  const resultsHtml =
+    searching && matchTotal === 0
+      ? `<p class="empty-hint empty-hint--lg">검색 결과가 없습니다.</p>`
+      : `${section('0티어', 0, tier0)}
       ${section('1티어', 1, tier1)}
       ${section('2티어', 2, tier2)}`
-      }
-      ${renderToolOutro()}
-    </div>
-  `
+  return { metaHtml, resultsHtml }
 }
 
 function renderRosterPage(): string {
@@ -2899,28 +2972,10 @@ function bindRecommend(): void {
   search?.addEventListener('input', () => {
     state.query = search.value
     window.clearTimeout(searchTimer)
-    searchTimer = window.setTimeout(() => {
-      const y = window.scrollY
-      const start = search.selectionStart
-      const end = search.selectionEnd
-      render()
-      window.scrollTo(0, y)
-      const next = document.querySelector<HTMLInputElement>('#deck-search-input')
-      if (next) {
-        next.focus()
-        if (start != null && end != null) next.setSelectionRange(start, end)
-      }
-    }, 120)
+    searchTimer = window.setTimeout(refreshTierDeckResults, 120)
   })
 
-  root.querySelectorAll<HTMLButtonElement>('[data-deck-id]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.deckId
-      if (id) openDeckModal(id)
-    })
-  })
-
-  bindSaveComboButtons(root)
+  bindTierDeckResults(root)
 
   root.querySelectorAll<HTMLElement>('[data-coexist-scroll]').forEach((scroller) => {
     bindHorizontalScroller(scroller)
@@ -2938,7 +2993,29 @@ function bindRecommend(): void {
     })
   })
 
-  document.querySelectorAll<HTMLButtonElement>('[data-expand-tier]').forEach((btn) => {
+}
+
+function refreshTierDeckResults(): void {
+  const results = document.querySelector<HTMLElement>('#tier-deck-results')
+  const meta = document.querySelector<HTMLElement>('#deck-search-meta')
+  if (!results || !meta) return
+  const { metaHtml, resultsHtml } = renderTierDeckResults()
+  meta.innerHTML = metaHtml
+  results.innerHTML = resultsHtml
+  bindTierDeckResults(results)
+}
+
+function bindTierDeckResults(root: ParentNode): void {
+  root.querySelectorAll<HTMLButtonElement>('[data-deck-id]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.deckId
+      if (id) openDeckModal(id)
+    })
+  })
+
+  bindSaveComboButtons(root)
+
+  root.querySelectorAll<HTMLButtonElement>('[data-expand-tier]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const tier = Number(btn.dataset.expandTier) as 0 | 1 | 2
       if (tier !== 0 && tier !== 1 && tier !== 2) return
@@ -2949,7 +3026,7 @@ function bindRecommend(): void {
     })
   })
 
-  document.querySelectorAll<HTMLButtonElement>('[data-collapse-tier]').forEach((btn) => {
+  root.querySelectorAll<HTMLButtonElement>('[data-collapse-tier]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const tier = Number(btn.dataset.collapseTier) as 0 | 1 | 2
       if (tier !== 0 && tier !== 1 && tier !== 2) return
@@ -2958,7 +3035,6 @@ function bindRecommend(): void {
       document.querySelector(`[data-tier-section="${tier}"]`)?.scrollIntoView({ block: 'start' })
     })
   })
-
 }
 
 function bindSeasonSelect(): void {
@@ -3092,6 +3168,7 @@ function bindSetResult(): void {
 }
 
 function render(): void {
+  redirectHubInAllSeasons()
   document.title = documentTitleForPage()
   updateCanonicalLink()
   app.innerHTML = `

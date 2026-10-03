@@ -1,6 +1,6 @@
 import { renderAdSlot } from './ads'
 import { getSeasonCatalog } from './data/seasonCatalog'
-import { SEASONS } from './data/seasons'
+import { SEASONS, isAllSeasons } from './data/seasons'
 import { hrefForPage } from './router'
 import type { SeasonId } from './types'
 
@@ -19,7 +19,7 @@ export function isInfoPage(page: string): page is InfoPage {
 }
 
 function seasonStatsHtml(): string {
-  return SEASONS.map((s) => {
+  return SEASONS.filter((s) => !isAllSeasons(s.id)).map((s) => {
     if (!s.enabled) {
       return `<li><strong>${s.label}(${s.short})</strong> — 준비 중. 데이터가 열리면 선택 목록에 활성화됩니다.</li>`
     }

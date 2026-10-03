@@ -37,7 +37,7 @@ import {
   buildGeneralsFromDecks,
   buildSkillsFromDecks,
 } from './helpers'
-import { DEFAULT_SEASON } from './seasons'
+import { DEFAULT_SEASON, getSeasonMeta } from './seasons'
 
 /**
  * 시즌 1개분의 덱·장수·전법·병법.
@@ -66,43 +66,48 @@ export interface SeasonCatalog {
   doctrines: Doctrine[]
 }
 
-const SEASON_DECKS: Record<SeasonId, Deck[]> = {
+type RealSeasonId = Exclude<SeasonId, 'YM'>
+
+/** 연무에서 보여 줄 순서 — 최신 시즌 먼저 */
+const ALL_SEASON_ORDER: RealSeasonId[] = ['S3', 'S2', 'S1']
+
+const SEASON_DECKS: Record<RealSeasonId, Deck[]> = {
   S1: s1Decks,
   S2: s2Decks,
   S3: s3Decks,
 }
 
-const SEASON_COEXIST_PACKS: Record<SeasonId, CoexistPack[]> = {
+const SEASON_COEXIST_PACKS: Record<RealSeasonId, CoexistPack[]> = {
   S1: s1CoexistPacks,
   S2: s2CoexistPacks,
   S3: s3CoexistPacks,
 }
 
-const SEASON_COEXIST: Record<SeasonId, Deck[]> = {
+const SEASON_COEXIST: Record<RealSeasonId, Deck[]> = {
   S1: s1CoexistDecks,
   S2: s2CoexistDecks,
   S3: s3CoexistDecks,
 }
 
-const SEASON_PIONEER: Record<SeasonId, Deck[]> = {
+const SEASON_PIONEER: Record<RealSeasonId, Deck[]> = {
   S1: s1PioneerDecks,
   S2: s2PioneerDecks,
   S3: s3PioneerDecks,
 }
 
-const SEASON_PIONEER_GUIDES: Record<SeasonId, PioneerDeckGuide[]> = {
+const SEASON_PIONEER_GUIDES: Record<RealSeasonId, PioneerDeckGuide[]> = {
   S1: s1PioneerGuides,
   S2: s2PioneerGuides,
   S3: s3PioneerGuides,
 }
 
-const SEASON_PIONEER_LAND: Record<SeasonId, PioneerLandGuide | null> = {
+const SEASON_PIONEER_LAND: Record<RealSeasonId, PioneerLandGuide | null> = {
   S1: s1PioneerLandGuide,
   S2: s2PioneerLandGuide,
   S3: s3PioneerLandGuide,
 }
 
-function buildCatalog(id: SeasonId): SeasonCatalog {
+function buildCatalog(id: RealSeasonId): SeasonCatalog {
   const decks = SEASON_DECKS[id]
   const coexistPacks = SEASON_COEXIST_PACKS[id]
   const coexistDecks = SEASON_COEXIST[id]
@@ -124,10 +129,39 @@ function buildCatalog(id: SeasonId): SeasonCatalog {
   }
 }
 
-const CATALOGS: Record<SeasonId, SeasonCatalog> = {
+const REAL_CATALOGS: Record<RealSeasonId, SeasonCatalog> = {
   S1: buildCatalog('S1'),
   S2: buildCatalog('S2'),
   S3: buildCatalog('S3'),
+}
+
+function buildAllSeasonsCatalog(): SeasonCatalog {
+  const parts = ALL_SEASON_ORDER.map((id) => ({ id, cat: REAL_CATALOGS[id], label: getSeasonMeta(id).label }))
+  const decks = parts.flatMap((p) => p.cat.decks)
+  const coexistDecks = parts.flatMap((p) => p.cat.coexistDecks)
+  const pioneerDecks = parts.flatMap((p) => p.cat.pioneerDecks)
+  const allForMeta = [...decks, ...coexistDecks, ...pioneerDecks]
+  return {
+    id: 'YM',
+    decks,
+    coexistPacks: parts.flatMap((p) =>
+      p.cat.coexistPacks.map((pack) => ({ ...pack, name: `${p.label} · ${pack.name}` })),
+    ),
+    coexistDecks,
+    pioneerDecks,
+    pioneerGuides: parts.flatMap((p) =>
+      p.cat.pioneerGuides.map((guide) => ({ ...guide, name: `${p.label} · ${guide.name}` })),
+    ),
+    pioneerLandGuide: null,
+    generals: buildGeneralsFromDecks(allForMeta, 'YM'),
+    skills: buildSkillsFromDecks(allForMeta, 'YM'),
+    doctrines: buildDoctrinesFromDecks(allForMeta, 'YM'),
+  }
+}
+
+const CATALOGS: Record<SeasonId, SeasonCatalog> = {
+  ...REAL_CATALOGS,
+  YM: buildAllSeasonsCatalog(),
 }
 
 export function getSeasonCatalog(id: SeasonId): SeasonCatalog {

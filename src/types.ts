@@ -2,7 +2,8 @@ export type Faction = '위' | '촉' | '오' | '군' | '기타'
 
 export type Tier = 0 | 1 | 2 | 3
 
-export type SeasonId = 'S1' | 'S2' | 'S3'
+/** YM = 연무 — 전 시즌 덱을 한곳에서 보는 통합 화면 */
+export type SeasonId = 'YM' | 'S1' | 'S2' | 'S3'
 
 export interface General {
   id: string
@@ -126,11 +127,32 @@ export interface PioneerLandDefense {
   recommend: string
 }
 
+/** 토지 레벨별 수비군 난이도 — 각 항목은 「장수·장수·장수」 수비 조합 */
+export interface PioneerLandDifficultyRow {
+  land: string
+  first: string[]
+  easy: string[]
+  normal: string[]
+  hard: string[]
+  /** 조합 분류 대신 보여 줄 한 줄 (예: 어려운 수비군 없음) */
+  overview?: string
+  bestDeck: string
+  /** 추천 장수 레벨 — 풀돌 / 중·고돌 / 저돌·명함 */
+  levels: { full: string; mid: string; low: string }
+  notes: string[]
+}
+
+export interface PioneerLandDifficulty {
+  notice: string[]
+  rows: PioneerLandDifficultyRow[]
+}
+
 /** 개척덱 하단 토지 육성 팁 */
 export interface PioneerLandGuide {
   steps: PioneerLandStep[]
   summary: string[]
   defenses: PioneerLandDefense[]
+  difficulty?: PioneerLandDifficulty
 }
 
 export type SlotStatus = 'required' | 'alt' | 'unresolved'

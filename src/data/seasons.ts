@@ -13,6 +13,7 @@ export interface SeasonMeta {
 }
 
 export const SEASONS: SeasonMeta[] = [
+  { id: 'YM', label: '연무 · 전 시즌 덱', short: '연무', enabled: true },
   { id: 'S1', label: '시즌 1', short: 'S1', enabled: true },
   { id: 'S2', label: '시즌 2 (중국 S3)', short: 'S2 (중국 S3)', enabled: true },
   { id: 'S3', label: '시즌 3', short: 'S3', enabled: true },
@@ -22,6 +23,11 @@ export const DEFAULT_SEASON: SeasonId = 'S1'
 
 export function getSeasonMeta(id: SeasonId): SeasonMeta {
   return SEASONS.find((s) => s.id === id) ?? SEASONS.find((s) => s.id === DEFAULT_SEASON)!
+}
+
+/** 연무 — 홈이 없고 전 시즌 덱을 합쳐 보여 준다 */
+export function isAllSeasons(id: SeasonId): boolean {
+  return id === 'YM'
 }
 
 export function enabledSeasons(): SeasonMeta[] {

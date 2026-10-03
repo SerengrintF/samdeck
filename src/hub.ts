@@ -1,8 +1,12 @@
 import { renderAdSlot } from './ads'
+import { type GearGuide, type GearPick, seasonGearGuide } from './data/gearGuide'
 import { displaySkillName } from './data/normalize'
 import { portraitSrc } from './data/portraits'
 import { skillTier } from './data/skillTiers'
 import type { Deck, PioneerLandGuide, SeasonId } from './types'
+
+const S3_DATA_SOURCE_URL =
+  'https://docs.google.com/spreadsheets/d/16U-O0PMGxtQjbZ7W4I5j4PbkiLguqBNRa-HR4Dw5PCQ/htmlview?gid=1981192997#gid=669534099'
 
 export type HubRank = {
   id: string
@@ -183,6 +187,47 @@ function pioneerTipsHtml(guide: PioneerLandGuide | null): string {
   `
 }
 
+function gearPickHtml(pick: GearPick): string {
+  return `<strong class="hub-gear__core">${pick.core}</strong>${
+    pick.extra ? `<span class="hub-gear__extra">${pick.extra}</span>` : ''
+  }`
+}
+
+function gearGuideHtml(guide: GearGuide): string {
+  return `
+    <section class="hub-block" aria-labelledby="hub-gear-title">
+      <h2 id="hub-gear-title" class="hub-block__title">무장 유형별 장비·말 특기</h2>
+      <p class="hub-block__lead">
+        <strong class="hub-gear__core">강조</strong>된 옵션이 핵심이고, 옆의 옵션은 상황에 따라 고르면 됩니다.
+      </p>
+      <ol class="hub-gear">
+        ${guide.roles
+          .map(
+            (r) => `
+              <li class="hub-gear__item">
+                <header class="hub-gear__head">
+                  <span class="hub-gear__no">${r.no}</span>
+                  <span class="hub-gear__role">${r.role}</span>
+                  <span class="hub-gear__generals">${r.generals.join(' · ')}</span>
+                </header>
+                <dl class="hub-gear__specs">
+                  <div><dt>장비 속성</dt><dd>${r.attr}</dd></div>
+                  <div><dt>장비 특기</dt><dd>${gearPickHtml(r.equipSpecial)}</dd></div>
+                  <div><dt>말 특기</dt><dd>${gearPickHtml(r.horseSpecial)}</dd></div>
+                </dl>
+              </li>
+            `,
+          )
+          .join('')}
+      </ol>
+      <div class="hub-gear__recommend">
+        <strong>종합 추천</strong>
+        <ul>${guide.recommend.map((line) => `<li>${line}</li>`).join('')}</ul>
+      </div>
+    </section>
+  `
+}
+
 export function renderHubPage(opts: {
   season: SeasonId
   seasonLabel: string
@@ -197,6 +242,7 @@ export function renderHubPage(opts: {
 }): string {
   const ranks = tierGeneralRanks(opts.decks)
   const skillRanks = tierSkillRanks(opts.decks)
+  const gearGuide = seasonGearGuide(opts.season)
   return `
     <div class="page-body page-body--hub">
       <article class="hub">
@@ -234,7 +280,10 @@ export function renderHubPage(opts: {
           }
         </section>
 
-        <section class="hub-block" aria-labelledby="hub-pioneer-title">
+        ${
+          gearGuide
+            ? gearGuideHtml(gearGuide)
+            : `<section class="hub-block" aria-labelledby="hub-pioneer-title">
           <h2 id="hub-pioneer-title" class="hub-block__title">개척 팁</h2>
           <p class="hub-block__lead">
             시즌 초반은 토지 레벨을 무리하게 올리는 경쟁이 아닙니다.
@@ -242,7 +291,8 @@ export function renderHubPage(opts: {
             레벨별 전법·수비군 상세는 개척덱 가이드에서 볼 수 있습니다.
           </p>
           ${pioneerTipsHtml(opts.landGuide)}
-        </section>
+        </section>`
+        }
 
         <nav class="hub-actions" aria-label="도구로 이동">
           <a class="hub-actions__btn hub-actions__btn--primary" href="${opts.tierHref}" data-nav="recommend">티어덱 목록</a>
@@ -251,6 +301,11 @@ export function renderHubPage(opts: {
           <a class="hub-actions__btn" href="${opts.metaHref}" data-nav="meta">시즌 공략</a>
           <a class="hub-actions__btn" href="${opts.guideHref}" data-nav="guide">사용 가이드</a>
         </nav>
+        ${
+          opts.season === 'S3'
+            ? `<p class="hub-source">데이터 출처: <a href="${S3_DATA_SOURCE_URL}" target="_blank" rel="noopener noreferrer">三國謀定天下 貂蟬攻略合集 (Google 스프레드시트)</a>를 참고했습니다.</p>`
+            : ''
+        }
         ${renderAdSlot()}
       </article>
     </div>
